@@ -1,176 +1,430 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
-export default function ProfilePage() {
-  const [username, setUsername] = useState("");
-  const [balance, setBalance] = useState(0);
-  const [wins, setWins] = useState(0);
-  const [losses, setLosses] = useState(0);
-  const [referrals, setReferrals] = useState(0);
 
-  useEffect(() => {
+export default function ProfilePage(){
+
+
+  const [username,setUsername] =
+    useState("");
+
+  const [completed,setCompleted] =
+    useState(0);
+
+  const [rewards,setRewards] =
+    useState(0);
+
+  const [accuracy,setAccuracy] =
+    useState(0);
+
+  const [xp,setXp] =
+    useState(0);
+
+  const [level,setLevel] =
+    useState(1);
+
+
+  const [loading,setLoading] =
+    useState(true);
+
+
+
+  useEffect(()=>{
+
+    loadProfile();
+
+  },[]);
+
+
+
+  async function loadProfile(){
+
+
     const user =
-      localStorage.getItem("currentUser") || "";
+      localStorage.getItem(
+        "currentUser"
+      );
+
+
+    if(!user){
+
+      window.location.href =
+        "/login";
+
+      return;
+
+    }
+
 
     setUsername(user);
 
-    const savedBalance =
-      Number(
-        localStorage.getItem(
-          `balance_${user}`
+
+
+    const {data,error} =
+      await supabase
+        .from("task_answers")
+        .select(
+          "correct,reward_paid"
         )
-      ) || 0;
+        .eq(
+          "username",
+          user
+        );
 
-    setBalance(savedBalance);
 
-    const results = JSON.parse(
-      localStorage.getItem(
-        "challengeResults"
-      ) || "[]"
+
+    if(error){
+
+      alert(error.message);
+      return;
+
+    }
+
+
+
+    if(data){
+
+
+      const total =
+        data.length;
+
+
+      const correct =
+        data.filter(
+          (item)=>
+          item.correct === true
+        ).length;
+
+
+
+      const money =
+        data.reduce(
+          (sum,item)=>
+          sum +
+          Number(
+            item.reward_paid || 0
+          ),
+          0
+        );
+
+
+
+      const userXP =
+        total * 10;
+
+
+
+      setCompleted(
+        total
+      );
+
+
+      setRewards(
+        money
+      );
+
+
+      setXp(
+        userXP
+      );
+
+
+      setLevel(
+        Math.floor(
+          userXP / 100
+        ) + 1
+      );
+
+
+
+      if(total > 0){
+
+        setAccuracy(
+          Math.round(
+            (correct / total)
+            * 100
+          )
+        );
+
+      }
+
+    }
+
+
+    setLoading(false);
+
+  }if(loading){
+
+    return(
+
+      <main
+        style={{
+          minHeight:"100vh",
+          background:"#020617",
+          color:"white",
+          display:"flex",
+          justifyContent:"center",
+          alignItems:"center",
+          fontSize:"25px"
+        }}
+      >
+
+        Loading Profile...
+
+      </main>
+
     );
 
-    const userResults = results.filter(
-      (item: any) =>
-        item.username === user
+  }
+
+
+
+  const rank =
+    level >= 20
+    ? "💎 Diamond"
+    : level >= 10
+    ? "🥇 Gold"
+    : level >= 5
+    ? "🥈 Silver"
+    : "🥉 Bronze";
+
+
+
+  const nextLevelXP =
+    level * 100;
+
+
+
+  const progress =
+    Math.min(
+      (xp / nextLevelXP) * 100,
+      100
     );
 
-    setWins(
-      userResults.filter(
-        (item: any) =>
-          item.result === "PASS"
-      ).length
-    );
 
-    setLosses(
-      userResults.filter(
-        (item: any) =>
-          item.result === "FAIL"
-      ).length
-    );
 
-    const savedReferrals =
-      Number(
-        localStorage.getItem(
-          `referrals_${user}`
-        )
-      ) || 0;
+  return(
 
-    setReferrals(savedReferrals);
-  }, []);
+    <main
 
-  const copyReferralLink = () => {
-    const link =
-      `${window.location.origin}/register?ref=${username}`;
+      style={{
+        minHeight:"100vh",
+        background:
+        "linear-gradient(135deg,#020617,#1e1b4b,#312e81)",
+        color:"white",
+        padding:"30px",
+        fontFamily:"Arial"
+      }}
 
-    navigator.clipboard.writeText(link);
+    >
 
-    alert(
-      "Referral link copied successfully!"
-    );
-  };
+
+      <h1>
+        👤 My Profile
+      </h1>
+
+
+
+      <div
+
+        style={{
+          background:"#0f172a",
+          padding:"30px",
+          borderRadius:"25px",
+          marginTop:"30px",
+          border:
+          "1px solid #334155"
+        }}
+
+      >
+
+
+        <h2>
+          👋 {username}
+        </h2>
+
+
+        <h2>
+          {rank}
+        </h2>
+
+
+
+        <h3>
+          ⭐ Level {level}
+        </h3>
+
+
+
+        <p>
+          XP:
+          {" "}
+          {xp}
+          /
+          {nextLevelXP}
+        </p>
+
+
+
+        <div
+
+          style={{
+            width:"100%",
+            height:"18px",
+            background:"#334155",
+            borderRadius:"20px"
+          }}
+
+        >
+
+          <div
+
+            style={{
+              width:`${progress}%`,
+              height:"100%",
+              background:
+              "linear-gradient(90deg,#22c55e,#3b82f6)",
+              borderRadius:"20px"
+            }}
+
+          />
+
+        </div>
+
+
+
+      </div>
+
+
+
+      <div
+
+        style={{
+          display:"grid",
+          gridTemplateColumns:
+          "repeat(auto-fit,minmax(220px,1fr))",
+          gap:"20px",
+          marginTop:"30px"
+        }}
+
+      >
+
+
+        <StatCard
+
+          title="Tasks Completed"
+          value={completed}
+          icon="✅"
+
+        />
+
+
+        <StatCard
+
+          title="Total Earned"
+          value={`KES ${rewards}`}
+          icon="💰"
+
+        />
+
+
+        <StatCard
+
+          title="Accuracy"
+          value={`${accuracy}%`}
+          icon="🎯"
+
+        />
+
+
+      </div><button
+
+        onClick={()=>
+          window.location.href =
+          "/dashboard"
+        }
+
+        style={{
+          marginTop:"30px",
+          width:"100%",
+          padding:"14px",
+          border:"none",
+          borderRadius:"12px",
+          background:"#334155",
+          color:"white",
+          cursor:"pointer",
+          fontSize:"16px",
+          fontWeight:"bold"
+        }}
+
+      >
+
+        ← Back Dashboard
+
+      </button>
+
+
+    </main>
+
+  );
+
+}
+
+
+
+function StatCard({
+
+  title,
+  value,
+  icon
+
+}:{
+
+  title:string;
+  value:any;
+  icon:string;
+
+}){
+
 
   return (
-    <main
+
+    <div
+
       style={{
-        minHeight: "100vh",
-        background: "#111827",
-        color: "white",
-        padding: "30px",
-        fontFamily: "Arial",
+        background:"#0f172a",
+        padding:"25px",
+        borderRadius:"20px",
+        border:
+        "1px solid #334155",
+        textAlign:"center"
       }}
+
     >
-      <h1>👤 Profile</h1>
 
-      <div
+      <h2>
+        {icon}
+      </h2>
+
+
+      <h3>
+        {title}
+      </h3>
+
+
+      <h1
         style={{
-          background: "#1f2937",
-          padding: "20px",
-          borderRadius: "12px",
-          marginTop: "20px",
+          color:"#38bdf8"
         }}
       >
-        <h2>Username</h2>
-        <p>{username}</p>
-      </div>
+        {value}
+      </h1>
 
-      <div
-        style={{
-          background: "#1f2937",
-          padding: "20px",
-          borderRadius: "12px",
-          marginTop: "15px",
-        }}
-      >
-        <h2>💰 Balance</h2>
-        <p>KES {balance}</p>
-      </div>
 
-      <div
-        style={{
-          background: "#1f2937",
-          padding: "20px",
-          borderRadius: "12px",
-          marginTop: "15px",
-        }}
-      >
-        <h2>🏆 Challenges Won</h2>
-        <p>{wins}</p>
-      </div>
+    </div>
 
-      <div
-        style={{
-          background: "#1f2937",
-          padding: "20px",
-          borderRadius: "12px",
-          marginTop: "15px",
-        }}
-      >
-        <h2>❌ Challenges Lost</h2>
-        <p>{losses}</p>
-      </div>
-
-      <div
-        style={{
-          background: "#1f2937",
-          padding: "20px",
-          borderRadius: "12px",
-          marginTop: "15px",
-        }}
-      >
-        <h2>👥 Referrals</h2>
-        <p>{referrals}</p>
-
-        <button
-          onClick={copyReferralLink}
-          style={{
-            marginTop: "10px",
-            padding: "10px 20px",
-            background: "#16a34a",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-          }}
-        >
-          🔗 Copy Referral Link
-        </button>
-      </div>
-
-      <button
-        onClick={() =>
-          (window.location.href = "/")
-        }
-        style={{
-          marginTop: "20px",
-          padding: "12px 25px",
-          background: "#2563eb",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
-        }}
-      >
-        Back to Dashboard
-      </button>
-    </main>
   );
+
 }

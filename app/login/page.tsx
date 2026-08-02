@@ -1,36 +1,54 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
+  const router = useRouter();
+
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const login = () => {
-    const users = JSON.parse(
-      localStorage.getItem("users") || "[]"
-    );
-
-    const user = users.find(
-      (u: any) =>
-        u.username === username &&
-        u.password === password
-    );
-
-    if (!user) {
-      alert("Invalid username or password");
+  async function login() {
+    if (!email || !password) {
+      alert("Please fill in all fields.");
       return;
     }
 
+    setLoading(true);
+
+    const { data, error } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+    if (error) {
+      alert(error.message);
+      setLoading(false);
+      return;
+    }
+
+    // Load username from users table
+    const { data: profile } = await supabase
+      .from("users")
+      .select("username")
+      .eq("email", email)
+      .single();
+
+    // Save session information
+    localStorage.setItem("currentUserId", data.user.id);
     localStorage.setItem(
       "currentUser",
-      username
+      profile?.username || ""
     );
 
-    alert("Login successful!");
+    alert("✅ Login successful!");
 
-    window.location.href = "/";
-  };
+    router.push("/dashboard");
+  }
 
   return (
     <main
@@ -39,39 +57,36 @@ export default function LoginPage() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: "#111827",
-        color: "white",
+        background:
+          "linear-gradient(135deg,#020617,#312e81,#7c3aed)",
       }}
     >
       <div
         style={{
-          background: "#1f2937",
+          background: "white",
           padding: "30px",
-          borderRadius: "12px",
-          width: "300px",
+          borderRadius: "15px",
+          width: "400px",
+          boxShadow: "0 10px 30px rgba(0,0,0,.2)",
         }}
       >
-        <h1>Login</h1>
-
-        <p style={{ marginBottom: "15px" }}>
-          Don't have an account?{" "}
-          <a href="/register">
-            Register
-          </a>
-        </p>
+        <h1
+          style={{
+            marginBottom: "20px",
+            textAlign: "center",
+          }}
+        >
+          Login
+        </h1>
 
         <input
-          type="text"
-          placeholder="Username"
-          value={username}
+          type="email"
+          placeholder="Email"
+          value={email}
           onChange={(e) =>
-            setUsername(e.target.value)
+            setEmail(e.target.value)
           }
-          style={{
-            width: "100%",
-            padding: "10px",
-            marginTop: "10px",
-          }}
+          style={input}
         />
 
         <input
@@ -81,27 +96,36 @@ export default function LoginPage() {
           onChange={(e) =>
             setPassword(e.target.value)
           }
-          style={{
-            width: "100%",
-            padding: "10px",
-            marginTop: "10px",
-          }}
+          style={input}
         />
 
         <button
           onClick={login}
-          style={{
-            width: "100%",
-            padding: "10px",
-            marginTop: "15px",
-            background: "#2563eb",
-            color: "white",
-            border: "none",
-          }}
+          disabled={loading}
+          style={button}
         >
-          Login
+          {loading ? "Logging in..." : "Login"}
         </button>
       </div>
     </main>
   );
 }
+
+const input = {
+  width: "100%",
+  padding: "14px",
+  marginBottom: "12px",
+  borderRadius: "10px",
+  border: "1px solid #ccc",
+};
+
+const button = {
+  width: "100%",
+  padding: "14px",
+  border: "none",
+  borderRadius: "10px",
+  background: "#2563eb",
+  color: "white",
+  cursor: "pointer",
+  fontSize: "16px",
+};

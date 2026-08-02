@@ -1,159 +1,207 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export default function RegisterPage() {
+  const router = useRouter();
+
+  const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [referrer, setReferrer] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
+  const [agree, setAgree] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(
-      window.location.search
-    );
-
+    const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
 
     if (ref) {
-      setReferrer(ref);
+      setReferralCode(ref);
     }
-  }, []);
-
-  const register = () => {
-    if (!username || !password) {
-      alert("Please fill all fields");
+  }, []);const register = async () => {
+    if (
+      !fullName ||
+      !username ||
+      !email ||
+      !phone ||
+      !password ||
+      !confirmPassword
+    ) {
+      alert("Please fill in all fields.");
       return;
     }
 
-    const users = JSON.parse(
-      localStorage.getItem("users") || "[]"
-    );
-
-    const userExists = users.find(
-      (u: any) => u.username === username
-    );
-
-    if (userExists) {
-      alert("Username already exists");
+    if (password !== confirmPassword) {
+      alert("Passwords do not match.");
       return;
     }
 
-    users.push({
-      username,
+    if (!agree) {
+      alert("Please accept the Terms & Conditions.");
+      return;
+    }
+
+    setLoading(true);
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
       password,
-      referredBy: referrer,
     });
 
-    localStorage.setItem(
-      "users",
-      JSON.stringify(users)
-    );
-
-    if (referrer) {
-      const currentReferrals =
-        Number(
-          localStorage.getItem(
-            `referrals_${referrer}`
-          )
-        ) || 0;
-
-      localStorage.setItem(
-        `referrals_${referrer}`,
-        (currentReferrals + 1).toString()
-      );
-
-      const currentBalance =
-        Number(
-          localStorage.getItem(
-            `balance_${referrer}`
-          )
-        ) || 0;
-
-      localStorage.setItem(
-        `balance_${referrer}`,
-        (currentBalance + 50).toString()
-      );
+    if (error) {
+      alert(error.message);
+      setLoading(false);
+      return;
     }
 
-    alert("Registration successful!");
+    const user = data.user;
 
-    window.location.href = "/login";
-  };
+    if (user) {
+      const { error: insertError } = await supabase
+        .from("users")
+        .insert([
+          {
+            id: user.id,
+            full_name: fullName,
+            username,
+            email,
+            phone,
+            balance: 0,
+            referral_code: username,
+            referred_by: referralCode || null,
+            is_activated: false,
+          },
+        ]);
 
-  return (
+      if (insertError) {
+        alert(insertError.message);
+        setLoading(false);
+        return;
+      }
+    }
+
+    alert(
+      "Account created successfully! Please check your email to verify your account."
+    );
+
+    router.push("/login");
+  };return (
     <main
       style={{
         minHeight: "100vh",
+        background: "linear-gradient(135deg,#020617,#312e81,#7c3aed)",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: "#111827",
-        color: "white",
+        padding: "25px",
       }}
     >
       <div
         style={{
-          background: "#1f2937",
+          width: "100%",
+          maxWidth: "500px",
+          background: "white",
           padding: "30px",
-          borderRadius: "12px",
-          width: "320px",
+          borderRadius: "20px",
         }}
       >
-        <h1>Register</h1>
-
-        {referrer && (
-          <p
-            style={{
-              color: "#22c55e",
-              marginTop: "10px",
-            }}
-          >
-            Referred by: {referrer}
-          </p>
-        )}
+        <h1>Create Account</h1>
 
         <input
-          type="text"
+          placeholder="Full Name"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          style={input}
+        />
+
+        <input
           placeholder="Username"
           value={username}
-          onChange={(e) =>
-            setUsername(e.target.value)
-          }
-          style={{
-            width: "100%",
-            padding: "10px",
-            marginTop: "10px",
-          }}
+          onChange={(e) => setUsername(e.target.value)}
+          style={input}
+        />
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={input}
+        />
+
+        <input
+          placeholder="Phone Number"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          style={input}
         />
 
         <input
           type="password"
           placeholder="Password"
           value={password}
-          onChange={(e) =>
-            setPassword(e.target.value)
-          }
-          style={{
-            width: "100%",
-            padding: "10px",
-            marginTop: "10px",
-          }}
+          onChange={(e) => setPassword(e.target.value)}
+          style={input}
         />
+
+        <input
+          type="password"
+          placeholder="Confirm Password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          style={input}
+        />
+
+        <input
+          placeholder="Referral Code (Optional)"
+          value={referralCode}
+          onChange={(e) => setReferralCode(e.target.value)}
+          style={input}
+        />
+
+        <label style={{ color: "#111827" }}>
+          <input
+            type="checkbox"
+            checked={agree}
+            onChange={() => setAgree(!agree)}
+          />{" "}
+          I agree to the Terms & Conditions
+        </label>
 
         <button
           onClick={register}
-          style={{
-            width: "100%",
-            padding: "10px",
-            marginTop: "15px",
-            background: "#22c55e",
-            color: "white",
-            border: "none",
-          }}
+          disabled={loading}
+          style={button}
         >
-          Register
+          {loading ? "Creating Account..." : "Create Account"}
         </button>
       </div>
     </main>
   );
 }
+
+const input = {
+  width: "100%",
+  padding: "14px",
+  marginBottom: "12px",
+  borderRadius: "10px",
+  border: "1px solid #ddd",
+};
+
+const button = {
+  width: "100%",
+  padding: "15px",
+  marginTop: "20px",
+  border: "none",
+  borderRadius: "12px",
+  background: "linear-gradient(90deg,#2563eb,#7c3aed)",
+  color: "white",
+  fontSize: "16px",
+  cursor: "pointer",
+};

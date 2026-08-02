@@ -2,130 +2,170 @@
 
 import { useEffect, useState } from "react";
 
-type Payment = {
-  phone: string;
-  transactionCode: string;
-  status: string;
-  date: string;
-};
-
-export default function PaymentsPage() {
-  const [payments, setPayments] = useState<Payment[]>([]);
+export default function AdminPayments() {
+  const [proofs, setProofs] = useState<any[]>([]);
 
   useEffect(() => {
-    const savedPayments = JSON.parse(
-      localStorage.getItem("payments") || "[]"
-    );
-
-    setPayments(savedPayments);
+    loadProofs();
   }, []);
 
-  const updatePayment = (
-    index: number,
-    status: string
-  ) => {
-    const updated = [...payments];
+  function loadProofs() {
+    const saved = JSON.parse(
+      localStorage.getItem("paymentProofs") || "[]"
+    );
 
-    updated[index].status = status;
+    setProofs(saved);
+  }
 
-    setPayments(updated);
+  function approve(index: number) {
+    const updated = [...proofs];
+
+    if (updated[index].status === "Approved") {
+      alert("Already approved.");
+      return;
+    }
+
+    updated[index].status = "Approved";
+
+    const username = updated[index].user;
+    const amount = Number(updated[index].amount);
+
+    const currentBalance =
+      Number(
+        localStorage.getItem(
+          `balance_${username}`
+        )
+      ) || 0;
 
     localStorage.setItem(
-      "payments",
+      `balance_${username}`,
+      String(currentBalance + amount)
+    );
+
+    const notifications = JSON.parse(
+      localStorage.getItem(
+        `notifications_${username}`
+      ) || "[]"
+    );
+
+    notifications.unshift(
+      `✅ Your payment of KES ${amount} has been approved.`
+    );
+
+    localStorage.setItem(
+      `notifications_${username}`,
+      JSON.stringify(notifications)
+    );
+
+    localStorage.setItem(
+      "paymentProofs",
       JSON.stringify(updated)
     );
-  };
+
+    setProofs(updated);
+
+    alert(
+      `${username} has been credited KES ${amount}.`
+    );
+  }
+
+  function reject(index: number) {
+    const updated = [...proofs];
+
+    updated[index].status = "Rejected";
+
+    localStorage.setItem(
+      "paymentProofs",
+      JSON.stringify(updated)
+    );
+
+    setProofs(updated);
+  }
 
   return (
     <main
       style={{
-        minHeight: "100vh",
-        background: "#111827",
-        color: "white",
         padding: "30px",
-        fontFamily: "Arial",
+        minHeight: "100vh",
+        background: "#f8fafc",
       }}
     >
-      <h1>💳 Payment Requests</h1>
+      <h1>💳 Payment Approvals</h1>
 
-      {payments.length === 0 ? (
-        <p>No payment requests yet</p>
+      {proofs.length === 0 ? (
+        <p>No payment proofs found.</p>
       ) : (
-        payments.map((payment, index) => (
+        proofs.map((proof, index) => (
           <div
             key={index}
             style={{
-              background: "#1f2937",
+              background: "white",
               padding: "20px",
               marginTop: "20px",
-              borderRadius: "10px",
+              borderRadius: "15px",
+              boxShadow:
+                "0 5px 15px rgba(0,0,0,.1)",
             }}
           >
-            <p>📱 Phone: {payment.phone}</p>
+            <h3>👤 {proof.user}</h3>
 
             <p>
-              🔑 Transaction Code:{" "}
-              {payment.transactionCode}
+              <strong>Code:</strong> {proof.code}
             </p>
 
             <p>
-              📅 Date: {payment.date}
+              <strong>Amount:</strong> KES {proof.amount}
             </p>
 
             <p>
-              Status: {payment.status}
+              <strong>Date:</strong> {proof.date}
             </p>
 
-            <button
-              onClick={() =>
-                updatePayment(index, "Approved")
-              }
-              style={{
-                padding: "10px",
-                background: "green",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                marginRight: "10px",
-              }}
-            >
-              Approve
-            </button>
+            <p>
+              <strong>Status:</strong>{" "}
+              {proof.status}
+            </p>
 
-            <button
-              onClick={() =>
-                updatePayment(index, "Rejected")
-              }
-              style={{
-                padding: "10px",
-                background: "red",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-              }}
-            >
-              Reject
-            </button>
+            {proof.status === "Pending" && (
+              <div
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                  marginTop: "15px",
+                }}
+              >
+                <button
+                  onClick={() => approve(index)}
+                  style={{
+                    padding: "10px 20px",
+                    border: "none",
+                    borderRadius: "10px",
+                    background: "#22c55e",
+                    color: "white",
+                    cursor: "pointer",
+                  }}
+                >
+                  ✅ Approve
+                </button>
+
+                <button
+                  onClick={() => reject(index)}
+                  style={{
+                    padding: "10px 20px",
+                    border: "none",
+                    borderRadius: "10px",
+                    background: "#ef4444",
+                    color: "white",
+                    cursor: "pointer",
+                  }}
+                >
+                  ❌ Reject
+                </button>
+              </div>
+            )}
           </div>
         ))
       )}
-
-      <button
-        onClick={() =>
-          (window.location.href =
-            "/admin/dashboard")
-        }
-        style={{
-          marginTop: "20px",
-          padding: "12px 25px",
-          background: "#2563eb",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
-        }}
-      >
-        Back to Dashboard
-      </button>
     </main>
   );
 }

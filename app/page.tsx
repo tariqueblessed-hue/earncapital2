@@ -1,135 +1,167 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 export default function Home() {
-  const [user, setUser] = useState("");
-  const [balance, setBalance] = useState(0);
-
-  useEffect(() => {
-    const currentUser =
-      localStorage.getItem("currentUser") || "";
-
-    if (!currentUser) {
-      window.location.href = "/login";
-      return;
-    }
-
-    setUser(currentUser);
-
-    const savedBalance =
-      Number(
-        localStorage.getItem(
-          `balance_${currentUser}`
-        )
-      ) || 0;
-
-    setBalance(savedBalance);
-  }, []);
-
-  const logout = () => {
-    localStorage.removeItem("currentUser");
-    window.location.href = "/login";
-  };
-
   return (
-    <div
+    <main
       style={{
         minHeight: "100vh",
-        background: "#111827",
+        background:
+          "linear-gradient(135deg,#0f172a,#1e1b4b,#312e81)",
         color: "white",
-        padding: "30px",
         fontFamily: "Arial",
       }}
     >
-      <h1>🚀 Earn Capital Dashboard</h1>
-
-      <h2>Welcome, {user}</h2>
-
       <div
         style={{
-          background: "#1f2937",
-          padding: "20px",
-          borderRadius: "10px",
-          marginTop: "20px",
+          maxWidth: "1200px",
+          margin: "0 auto",
+          padding: "40px 20px",
         }}
       >
-        <h2>💰 Balance</h2>
-        <h1>KES {balance}</h1>
-      </div>
-
-      <div
-        style={{
-          marginTop: "25px",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "10px",
-        }}
-      >
-        <button
-          onClick={() =>
-            (window.location.href =
-              "/profile")
-          }
-        >
-          👤 Profile
-        </button>
-
-        <button
-          onClick={() =>
-            (window.location.href =
-              "/challenge")
-          }
-        >
-          🧠 Challenge
-        </button>
-
-        <button
-          onClick={() =>
-            (window.location.href =
-              "/withdrawals")
-          }
-        >
-          💸 Withdrawals
-        </button>
-
-        <button
-          onClick={() =>
-            (window.location.href =
-              "/history")
-          }
-        >
-          📜 History
-        </button>
-
-        <button
-          onClick={() =>
-            (window.location.href =
-              "/daily-reward")
-          }
-        >
-          🎁 Daily Reward
-        </button>
-
-        <button
-          onClick={() =>
-            (window.location.href =
-              "/notifications")
-          }
-        >
-          🔔 Notifications
-        </button>
-
-        <button
-          onClick={logout}
+        {/* Navbar */}
+        <div
           style={{
-            background: "#dc2626",
-            color: "white",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
-          Logout
-        </button>
+          <h1>💜 EarnCapital Pro</h1>
+
+          <div>
+            <button
+              onClick={() =>
+                (window.location.href =
+                  "/login")
+              }
+              style={{
+                marginRight: "10px",
+                padding: "10px 20px",
+                borderRadius: "8px",
+                border: "none",
+              }}
+            >
+              Login
+            </button>
+
+            <button
+              onClick={() =>
+                (window.location.href =
+                  "/register")
+              }
+              style={{
+                padding: "10px 20px",
+                borderRadius: "8px",
+                border: "none",
+                background: "#7c3aed",
+                color: "white",
+              }}
+            >
+              Register
+            </button>
+          </div>
+        </div>
+
+        {/* Hero */}
+        <div
+          style={{
+            textAlign: "center",
+            marginTop: "100px",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "55px",
+            }}
+          >
+            Earn Daily Through
+            AI Tasks
+          </h1>
+
+          <p
+            style={{
+              marginTop: "20px",
+              fontSize: "20px",
+              color: "#cbd5e1",
+            }}
+          >
+            Complete tasks, earn rewards,
+            refer friends and grow your
+            income.
+          </p>
+
+          <button
+            onClick={() =>
+              (window.location.href =
+                "/register")
+            }
+            style={{
+              marginTop: "30px",
+              padding: "15px 35px",
+              background: "#7c3aed",
+              color: "white",
+              border: "none",
+              borderRadius: "10px",
+              fontSize: "18px",
+            }}
+          >
+            🚀 Get Started
+          </button>
+        </div>
+
+        {/* Features */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit,minmax(250px,1fr))",
+            gap: "20px",
+            marginTop: "100px",
+          }}
+        >
+          <div
+            style={{
+              background: "#1e293b",
+              padding: "25px",
+              borderRadius: "15px",
+            }}
+          >
+            <h3>🧠 AI Tasks</h3>
+            <p>
+              Complete simple AI-powered
+              tasks and earn money.
+            </p>
+          </div>
+
+          <div
+            style={{
+              background: "#1e293b",
+              padding: "25px",
+              borderRadius: "15px",
+            }}
+          >
+            <h3>🔗 Referrals</h3>
+            <p>
+              Invite friends and earn
+              referral commissions.
+            </p>
+          </div>
+
+          <div
+            style={{
+              background: "#1e293b",
+              padding: "25px",
+              borderRadius: "15px",
+            }}
+          >
+            <h3>💸 Withdrawals</h3>
+            <p>
+              Withdraw through M-Pesa,
+              PayPal and Bank.
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
