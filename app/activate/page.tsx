@@ -9,7 +9,7 @@ export default function ActivatePage() {
   const [transactionCode, setTransactionCode] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const activationFee = getSetting("registrationFee", 300);
+  const activationFee = 300;
 
   useEffect(() => {
     loadUser();
