@@ -91,7 +91,7 @@ export default function DashboardPage() {
 
           <ReferralCard username={username} />
 
-          <NotificationCard />
+          <NotificationCard username={username} />
         </div>
       </div>
     </DashboardLayout>
