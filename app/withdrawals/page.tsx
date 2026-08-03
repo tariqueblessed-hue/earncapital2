@@ -51,7 +51,12 @@ export default function WithdrawPage() {
       return;
     }
 
-    setEmail(user.email);
+   if (!user.email) {
+  alert("User email not found.");
+  return;
+}
+
+setEmail(user.email);
 
     const currentUser =
       localStorage.getItem("currentUser") || "";
