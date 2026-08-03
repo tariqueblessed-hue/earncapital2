@@ -56,7 +56,7 @@ export default function WithdrawPage() {
   return;
 }
 
-setEmail(user.email);
+setEmail(user.email ?? "");
 
     const currentUser =
       localStorage.getItem("currentUser") || "";
