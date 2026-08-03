@@ -50,82 +50,127 @@ export default function LoginPage() {
     router.push("/dashboard");
   }
 
-  return (
-    <main
+    return (
+  <main
+    style={{
+      minHeight: "100vh",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: "20px",
+      background:
+        "linear-gradient(135deg,#020617,#1e1b4b,#7c3aed)",
+    }}
+  >
+    <div
       style={{
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        background:
-          "linear-gradient(135deg,#020617,#312e81,#7c3aed)",
+        width: "100%",
+        maxWidth: "450px",
+        background: "#ffffff",
+        borderRadius: "24px",
+        padding: "35px",
+        boxShadow: "0 25px 60px rgba(0,0,0,.25)",
       }}
     >
       <div
         style={{
-          background: "white",
-          padding: "30px",
-          borderRadius: "15px",
-          width: "400px",
-          boxShadow: "0 10px 30px rgba(0,0,0,.2)",
+          textAlign: "center",
+          marginBottom: "30px",
         }}
       >
         <h1
           style={{
-            marginBottom: "20px",
-            textAlign: "center",
+            fontSize: "34px",
+            fontWeight: "800",
+            color: "#111827",
+            marginBottom: "10px",
           }}
         >
-          Login
+          Welcome Back 👋
         </h1>
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) =>
-            setEmail(e.target.value)
-          }
-          style={input}
-        />
-
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) =>
-            setPassword(e.target.value)
-          }
-          style={input}
-        />
-
-        <button
-          onClick={login}
-          disabled={loading}
-          style={button}
+        <p
+          style={{
+            color: "#6b7280",
+            fontSize: "15px",
+          }}
         >
-          {loading ? "Logging in..." : "Login"}
-        </button>
+          Login to your EarnCapital account
+        </p>
       </div>
-    </main>
-  );
+
+      <input
+        type="email"
+        placeholder="Email Address"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        style={input}
+      />
+
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        style={input}
+      />
+
+      <button
+        onClick={login}
+        disabled={loading}
+        style={button}
+      >
+        {loading ? "Logging in..." : "Login"}
+      </button>
+
+      <p
+        style={{
+          textAlign: "center",
+          marginTop: "22px",
+          color: "#6b7280",
+        }}
+      >
+        Don't have an account?{" "}
+        <a
+          href="/register"
+          style={{
+            color: "#2563eb",
+            fontWeight: "700",
+            textDecoration: "none",
+          }}
+        >
+          Create Account
+        </a>
+      </p>
+    </div>
+  </main>
+);
 }
 
 const input = {
   width: "100%",
-  padding: "14px",
-  marginBottom: "12px",
-  borderRadius: "10px",
-  border: "1px solid #ccc",
+  padding: "16px",
+  marginBottom: "16px",
+  borderRadius: "14px",
+  border: "1px solid #d1d5db",
+  background: "#f9fafb",
+  color: "#111827",
+  fontSize: "15px",
+  outline: "none",
+  boxSizing: "border-box" as const,
 };
 
 const button = {
   width: "100%",
-  padding: "14px",
+  padding: "16px",
   border: "none",
-  borderRadius: "10px",
-  background: "#2563eb",
-  color: "white",
+  borderRadius: "14px",
+  background:
+    "linear-gradient(90deg,#2563eb,#7c3aed)",
+  color: "#ffffff",
+  fontSize: "17px",
+  fontWeight: "700",
   cursor: "pointer",
-  fontSize: "16px",
+  boxShadow:
+    "0 10px 25px rgba(124,58,237,.35)",
 };
