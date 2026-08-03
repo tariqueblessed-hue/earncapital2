@@ -24,7 +24,9 @@ export default function RegisterPage() {
     if (ref) {
       setReferralCode(ref);
     }
-  }, []);const register = async () => {
+  }, []);
+
+  const register = async () => {
     if (
       !fullName ||
       !username ||
@@ -43,7 +45,7 @@ export default function RegisterPage() {
     }
 
     if (!agree) {
-      alert("Please accept the Terms & Conditions.");
+      alert("Please accept Terms & Conditions.");
       return;
     }
 
@@ -63,7 +65,7 @@ export default function RegisterPage() {
     const user = data.user;
 
     if (user) {
-      const { error: insertError } = await supabase
+      const { error: profileError } = await supabase
         .from("users")
         .insert([
           {
@@ -79,15 +81,15 @@ export default function RegisterPage() {
           },
         ]);
 
-      if (insertError) {
-        alert(insertError.message);
+      if (profileError) {
+        alert(profileError.message);
         setLoading(false);
         return;
       }
     }
 
     alert(
-      "Account created successfully! Please check your email to verify your account."
+      "Account created successfully. Please verify your email."
     );
 
     router.push("/login");
@@ -95,23 +97,51 @@ export default function RegisterPage() {
     <main
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg,#020617,#312e81,#7c3aed)",
+        background:
+          "linear-gradient(135deg,#020617,#1e1b4b,#7c3aed)",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        padding: "25px",
+        padding: "20px",
       }}
     >
       <div
         style={{
           width: "100%",
-          maxWidth: "500px",
-          background: "white",
-          padding: "30px",
-          borderRadius: "20px",
+          maxWidth: "520px",
+          background: "rgba(255,255,255,0.96)",
+          borderRadius: "28px",
+          padding: "35px",
+          boxShadow:
+            "0 25px 60px rgba(0,0,0,0.35)",
         }}
       >
-        <h1>Create Account</h1>
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: "30px",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "36px",
+              fontWeight: "800",
+              color: "#111827",
+              marginBottom: "10px",
+            }}
+          >
+            EarnCapital
+          </h1>
+
+          <p
+            style={{
+              color: "#6b7280",
+              fontSize: "15px",
+            }}
+          >
+            Create your account and start your journey 🚀
+          </p>
+        </div>
 
         <input
           placeholder="Full Name"
@@ -129,7 +159,7 @@ export default function RegisterPage() {
 
         <input
           type="email"
-          placeholder="Email"
+          placeholder="Email Address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           style={input}
@@ -154,24 +184,38 @@ export default function RegisterPage() {
           type="password"
           placeholder="Confirm Password"
           value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
+          onChange={(e) =>
+            setConfirmPassword(e.target.value)
+          }
           style={input}
         />
 
         <input
           placeholder="Referral Code (Optional)"
           value={referralCode}
-          onChange={(e) => setReferralCode(e.target.value)}
+          onChange={(e) =>
+            setReferralCode(e.target.value)
+          }
           style={input}
         />
 
-        <label style={{ color: "#111827" }}>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            color: "#374151",
+            fontSize: "14px",
+            marginTop: "10px",
+          }}
+        >
           <input
             type="checkbox"
             checked={agree}
             onChange={() => setAgree(!agree)}
-          />{" "}
-          I agree to the Terms & Conditions
+          />
+
+          I agree to Terms & Conditions
         </label>
 
         <button
@@ -179,29 +223,59 @@ export default function RegisterPage() {
           disabled={loading}
           style={button}
         >
-          {loading ? "Creating Account..." : "Create Account"}
+          {loading
+            ? "Creating Account..."
+            : "Create Account"}
         </button>
+
+        <p
+          style={{
+            textAlign: "center",
+            marginTop: "22px",
+            color: "#6b7280",
+          }}
+        >
+          Already have an account?{" "}
+          <a
+            href="/login"
+            style={{
+              color: "#2563eb",
+              fontWeight: "700",
+              textDecoration: "none",
+            }}
+          >
+            Login
+          </a>
+        </p>
       </div>
     </main>
   );
-}
-
-const input = {
+}const input = {
   width: "100%",
-  padding: "14px",
-  marginBottom: "12px",
-  borderRadius: "10px",
-  border: "1px solid #ddd",
+  padding: "16px",
+  marginBottom: "16px",
+  borderRadius: "14px",
+  border: "1px solid #d1d5db",
+  background: "#f9fafb",
+  color: "#111827",
+  fontSize: "15px",
+  outline: "none",
+  boxSizing: "border-box" as const,
 };
+
 
 const button = {
   width: "100%",
-  padding: "15px",
-  marginTop: "20px",
+  padding: "17px",
+  marginTop: "22px",
   border: "none",
-  borderRadius: "12px",
-  background: "linear-gradient(90deg,#2563eb,#7c3aed)",
-  color: "white",
-  fontSize: "16px",
+  borderRadius: "16px",
+  background:
+    "linear-gradient(90deg,#2563eb,#7c3aed)",
+  color: "#ffffff",
+  fontSize: "17px",
+  fontWeight: "800",
   cursor: "pointer",
+  boxShadow:
+    "0 12px 30px rgba(124,58,237,0.35)",
 };
