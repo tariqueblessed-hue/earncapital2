@@ -154,10 +154,11 @@ if (walletError) {
   alert(walletError.message);
   return;
 }
-      if (walletError) {
-        alert(walletError.message);
-        return;
-      }
+  if (walletError) {
+  alert("Failed to update wallet.");
+  console.error(walletError);
+  return;
+}
 
       setBalance(newBalance);
     }
