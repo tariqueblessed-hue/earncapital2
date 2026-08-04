@@ -1,482 +1,332 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function AppDepositPage() {
-
-const [amount, setAmount] = useState("");
-const [phoneNumber, setPhoneNumber] = useState("");
-const [transactionCode, setTransactionCode] = useState("");
-
-const [balance, setBalance] = useState(0);
-const [paymentProof, setPaymentProof] = useState<File | null>(null);
+  const amount = 300;
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [balance, setBalance] = useState(0);
+  const [activated, setActivated] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const depositNumber = "0143390270";
 
   useEffect(() => {
   loadBalance();
+
+  const interval = setInterval(() => {
+    loadBalance();
+  }, 5000);
+
+  return () => clearInterval(interval);
+
 }, []);
+  async function loadBalance() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-async function loadBalance() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    if (!user) return;
 
-  if (!user) return;
+    const { data } = await supabase
+      .from("users")
+      .select("balance, fee_paid, is_activated")
+      .eq("email", user.email)
+      .single();
 
-  const { data } = await supabase
-    .from("users")
-    .select("balance")
-    .eq("email", user.email)
-    .single();
-
-  if (data) {
-    setBalance(Number(data.balance));
-  }
+    if (data) {
+  setBalance(Number(data.balance));
+  setActivated(data.is_activated);
 }
-async function submitDeposit() {
-
-  if (!amount || !phoneNumber || !transactionCode) {
-    alert("Please fill all deposit details.");
-    return;
   }
 
+  async function submitDeposit() {
+    if (!amount || !phoneNumber) {
+      alert("Please enter amount and phone number.");
+      return;
+    }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    setLoading(true);
 
+    try {
+      const response = await fetch("/api/stkpush", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phone: phoneNumber,
+          amount: Number(300),
+        }),
+      });
 
-  if (!user || !user.email) {
-    alert("Please login first.");
-    return;
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.error || "Failed to send STK Push.");
+        setLoading(false);
+        return;
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("username")
+          .eq("email", user.email)
+          .single();
+
+        await supabase.from("deposits").insert({
+          username: profile?.username || "Unknown",
+          email: user.email,
+          phone: phoneNumber,
+          amount: Number(amount),
+          method: "M-Pesa",
+          status: "Pending",
+        });
+      }
+
+      alert(
+        "📲 STK Push sent successfully!\n\nCheck your phone and enter your M-PESA PIN."
+      );
+
+  
+      setPhoneNumber("");
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong.");
+    }
+
+    setLoading(false);
   }
 
-
-  const { data: profile } = await supabase
-    .from("users")
-    .select("username")
-    .eq("email", user.email)
-    .single();
-
-
-
-const { data, error } = await supabase
-  .from("deposits")
-  .insert({
-    username: profile?.username || "Unknown",
-    email: user.email,
-    phone: phoneNumber,
-    amount: Number(amount),
-    method: "M-Pesa",
-    transaction_code: transactionCode,
-    status: "Pending",
-  })
-  .select();
-
-console.log("Inserted:", data);
-console.log("Error:", error);
-
-if (error) {
-  alert(error.message);
-  return;
-}
-
-
- if (error) {
-  console.log(error);
-  alert(JSON.stringify(error));
-  return;
-}if (error) {
-  console.log(error);
-  alert(JSON.stringify(error));
-  return;
-}
-
-
-  alert(
-    "✅ Deposit submitted successfully. Waiting for approval."
-  );
-
-
-  setAmount("");
-
-  setTransactionCode("");
-
-}
-  return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background:
-          "linear-gradient(135deg,#020617,#111827,#312e81)",
-        padding: "30px",
-        color: "white",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
-
-      {/* Header */}
-      <div
-        style={{
-          marginBottom: "25px",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "36px",
-            fontWeight: "bold",
-          }}
-        >
-          💎 Deposit Funds
-        </h1>
-
-        <p
-          style={{
-            color: "#cbd5e1",
-          }}
-        >
-          Add money securely to your EarnCapital wallet.
-        </p>
-      </div>
-
-
-      {/* Wallet Card */}
-      <div
-        style={{
-          background:
-            "linear-gradient(135deg,#2563eb,#7c3aed)",
-          padding: "25px",
-          borderRadius: "22px",
-          boxShadow:
-            "0 20px 40px rgba(0,0,0,.3)",
-          marginBottom: "25px",
-        }}
-      >
-
-        <p
-          style={{
-            opacity: .8,
-          }}
-        >
-          Current Balance
-        </p>
-
-        <h1
-          style={{
-            fontSize:"40px",
-            margin:"10px 0",
-          }}
-        >
-    KES {balance.toLocaleString()}
-        </h1>
-
-
-        <span
-          style={{
-            background:"rgba(255,255,255,.2)",
-            padding:"8px 15px",
-            borderRadius:"20px",
-          }}
-        >
-          🔒 Secure Wallet
-        </span>
-
-      </div>
-
-
-
-      {/* M-Pesa Card */}
-      <div
-        style={{
-          background:"#0f172a",
-          border:"1px solid #334155",
-          borderRadius:"22px",
-          padding:"25px",
-          marginBottom:"25px",
-        }}
-      >
-
-        <h2>
-          📱 M-Pesa Deposit
-        </h2>
-
-
-        <p
-          style={{
-            color:"#cbd5e1",
-          }}
-        >
-          Send money to the number below:
-        </p>
-
-
-        <div
-          style={{
-            background:"#020617",
-            padding:"20px",
-            borderRadius:"15px",
-            marginTop:"15px",
-          }}
-        >
-
-          <h1
-            style={{
-              color:"#22c55e",
-              letterSpacing:"2px",
-            }}
-          >
-            {depositNumber}
-          </h1>
-
-
-          <p>
-            Account Name:
-            <strong> EarnCapital</strong>
-          </p>
-
-        </div>
-
-
-      </div>{/* Deposit Form */}
-
-      <div
-        style={{
-          background:"#0f172a",
-          border:"1px solid #334155",
-          borderRadius:"22px",
-          padding:"25px",
-          marginBottom:"25px",
-        }}
-      >
-
-        <h2>
-          💰 Deposit Details
-        </h2>
-
-
-        <label
-          style={{
-            display:"block",
-            marginTop:"20px",
-            marginBottom:"8px",
-            color:"#cbd5e1",
-          }}
-        >
-          Amount (KES)
-        </label>
-
-<label
+  return (<main
   style={{
-    display: "block",
-    marginTop: "20px",
-    marginBottom: "8px",
-    color: "#cbd5e1",
+    minHeight: "100vh",
+    background:
+      "linear-gradient(135deg,#020617,#111827,#312e81)",
+    padding: "30px",
+    color: "white",
+    fontFamily: "Arial, sans-serif",
   }}
 >
-  M-Pesa Phone Number
-</label>
+  {/* Header */}
 
-<input
-  type="tel"
-  placeholder="07XXXXXXXX"
-  value={phoneNumber}
-  onChange={(e) => setPhoneNumber(e.target.value)}
+  <div
+    style={{
+      marginBottom: "25px",
+    }}
+  >
+    <h1
+      style={{
+        fontSize: "36px",
+        fontWeight: "bold",
+      }}
+    >
+      💎 Deposit Funds
+    </h1>
+
+    <p
+      style={{
+        color: "#cbd5e1",
+      }}
+    >
+      Add money securely to your EarnCapital wallet.
+    </p>
+  </div>
+
+  {/* Wallet */}
+
+  <div
+    style={{
+      background:
+        "linear-gradient(135deg,#2563eb,#7c3aed)",
+      padding: "25px",
+      borderRadius: "22px",
+      boxShadow:
+        "0 20px 40px rgba(0,0,0,.3)",
+      marginBottom: "25px",
+    }}
+  >
+    <p
+      style={{
+        opacity: 0.8,
+      }}
+    >
+      Current Balance
+    </p>
+
+    <h1
+      style={{
+        fontSize: "40px",
+        margin: "10px 0",
+      }}
+    >
+      KES {balance.toLocaleString()}
+    </h1>
+
+    <span
+      style={{
+        background: "rgba(255,255,255,.2)",
+        padding: "8px 15px",
+        borderRadius: "20px",
+      }}
+    >
+      🔒 Secure Wallet
+    </span>
+  </div>
+
+  {/* M-Pesa */}
+
+  <div
+    style={{
+      background: "#0f172a",
+      border: "1px solid #334155",
+      borderRadius: "22px",
+      padding: "25px",
+      marginBottom: "25px",
+    }}
+  >
+    <h2>📱 M-Pesa Deposit</h2>
+
+    <p
+      style={{
+        color: "#cbd5e1",
+      }}
+    >
+      Registration Fee
+    </p>
+
+    <div
+      style={{
+        background: "#020617",
+        padding: "20px",
+        borderRadius: "15px",
+        marginTop: "15px",
+      }}
+    >
+      <h1
+        style={{
+          color: "#22c55e",
+          letterSpacing: "2px",
+        }}
+      >
+        KES 300
+      </h1>
+
+      <p>
+        Activate your EarnCapital account and start earning.
+      </p>
+    </div>
+  </div>{/* Activation Form */}
+
+<div
   style={{
-    width: "100%",
-    padding: "15px",
-    borderRadius: "12px",
-    border: "1px solid #475569",
-    background: "#020617",
-    color: "white",
-    fontSize: "16px",
+    background: "#0f172a",
+    border: "1px solid #334155",
+    borderRadius: "22px",
+    padding: "25px",
+    marginBottom: "25px",
   }}
-/>
-        <input
-          type="number"
-          placeholder="Enter amount"
-          value={amount}
-          onChange={(e)=>
-            setAmount(e.target.value)
-          }
-          style={{
-            width:"100%",
-            padding:"15px",
-            borderRadius:"12px",
-            border:"1px solid #475569",
-            background:"#020617",
-            color:"white",
-            fontSize:"16px",
-            outline:"none",
-          }}
-        />
+>
+  <h2>🚀 Activate & Start Earning</h2>
 
+  <p
+    style={{
+      color: "#94a3b8",
+      marginBottom: "20px",
+    }}
+  >
+    Enter your Safaricom number below. We will send an M-PESA STK Push to your phone.
+  </p>
 
+  <label
+    style={{
+      display: "block",
+      marginBottom: "8px",
+      color: "#cbd5e1",
+    }}
+  >
+    M-Pesa Phone Number
+  </label>
 
-        <label
-          style={{
-            display:"block",
-            marginTop:"20px",
-            marginBottom:"8px",
-            color:"#cbd5e1",
-          }}
-        >
-          M-Pesa Transaction Code
-        </label>
+  <input
+    type="tel"
+    placeholder="07XXXXXXXX"
+    value={phoneNumber}
+    onChange={(e) => setPhoneNumber(e.target.value)}
+    style={{
+      width: "100%",
+      padding: "15px",
+      borderRadius: "12px",
+      border: "1px solid #475569",
+      background: "#020617",
+      color: "white",
+      fontSize: "16px",
+      marginBottom: "20px",
+    }}
+  />
 
+  <button
+    onClick={submitDeposit}
+    disabled={loading}
+    style={{
+      width: "100%",
+      padding: "16px",
+      border: "none",
+      borderRadius: "14px",
+      cursor: loading ? "not-allowed" : "pointer",
+      background: loading
+        ? "#475569"
+        : "linear-gradient(90deg,#22c55e,#16a34a)",
+      color: "white",
+      fontWeight: "bold",
+      fontSize: "18px",
+    }}
+  >
+    {loading
+      ? "Sending STK Push..."
+      : "🚀 Activate & Start Earning"}
+  </button>
+</div>{/* Security */}
 
-        <input
-          type="text"
-          placeholder="Example: QWE123XYZ"
-          value={transactionCode}
-          onChange={(e)=>
-            setTransactionCode(e.target.value)
-          }
-          style={{
-            width:"100%",
-            padding:"15px",
-            borderRadius:"12px",
-            border:"1px solid #475569",
-            background:"#020617",
-            color:"white",
-            fontSize:"16px",
-            textTransform:"uppercase",
-            outline:"none",
-          }}
-        />
+<div
+  style={{
+    background: "linear-gradient(135deg,#064e3b,#065f46)",
+    borderRadius: "22px",
+    padding: "25px",
+    marginBottom: "30px",
+  }}
+>
+  <h2>🔒 Secure Payments</h2>
 
+  <p
+    style={{
+      color: "#d1fae5",
+      lineHeight: "1.7",
+    }}
+  >
+    Your payment is processed securely using Safaricom M-PESA STK Push.
+    Once payment is successful your account will automatically be activated
+    and your wallet credited.
+  </p>
 
+  <div
+    style={{
+      marginTop: "15px",
+      background: "rgba(255,255,255,.15)",
+      padding: "12px",
+      borderRadius: "12px",
+    }}
+  >
+    ✅ Automatic Account Activation
+  </div>
+</div>
 
-        <button
-          onClick={() => {
-  alert("Button clicked!");
-  submitDeposit();
-}}
-           style={{ 
-            marginTop:"25px",
-            padding:"16px",
-            borderRadius:"14px",
-            border:"none",
-            cursor:"pointer",
-            color:"white",
-            fontSize:"17px",
-            fontWeight:"bold",
-            background:
-              "linear-gradient(90deg,#2563eb,#7c3aed)",
-            boxShadow:
-              "0 10px 25px rgba(37,99,235,.35)",
-          }}
-        >
-          🚀 Submit Deposit
-        </button>
-
-
-      </div>{/* Deposit History */}
-
-      <div
-        style={{
-          background:"#0f172a",
-          border:"1px solid #334155",
-          borderRadius:"22px",
-          padding:"25px",
-          marginBottom:"25px",
-        }}
-      >
-
-        <h2>
-          📜 Deposit History
-        </h2>
-
-
-        <div
-          style={{
-            marginTop:"20px",
-            background:"#020617",
-            padding:"18px",
-            borderRadius:"15px",
-            display:"flex",
-            justifyContent:"space-between",
-            alignItems:"center",
-          }}
-        >
-
-          <div>
-            <h3>
-              No deposits yet
-            </h3>
-
-            <p
-              style={{
-                color:"#94a3b8",
-                margin:0,
-              }}
-            >
-              Your approved deposits will appear here.
-            </p>
-          </div>
-
-
-          <span
-            style={{
-              background:"#ca8a04",
-              padding:"8px 14px",
-              borderRadius:"20px",
-              fontSize:"13px",
-            }}
-          >
-            🟡 Pending
-          </span>
-
-        </div>
-
-      </div>
-
-
-
-      {/* Security Card */}
-
-      <div
-        style={{
-          background:
-            "linear-gradient(135deg,#064e3b,#065f46)",
-          borderRadius:"22px",
-          padding:"25px",
-          marginBottom:"30px",
-        }}
-      >
-
-        <h2>
-          🔒 Secure Payments
-        </h2>
-
-
-        <p
-          style={{
-            color:"#d1fae5",
-            lineHeight:"1.6",
-          }}
-        >
-          Your deposits are manually verified by our
-          finance team. Funds are added to your wallet
-          only after successful payment confirmation.
-        </p>
-
-
-        <div
-          style={{
-            marginTop:"15px",
-            background:"rgba(255,255,255,.12)",
-            padding:"12px",
-            borderRadius:"12px",
-          }}
-        >
-          ✅ Protected Verification System
-        </div>
-
-      </div>
-
-
-    </main>
-  );
+</main>
+);
 }
