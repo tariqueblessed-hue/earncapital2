@@ -24,9 +24,11 @@ async function getAccessToken() {
   );
 
 
-  const data = await response.json();
+  const data: {
+  access_token: string;
+} = await response.json();
 
-  return data.access_token;
+return data.access_token;
 }
 
 

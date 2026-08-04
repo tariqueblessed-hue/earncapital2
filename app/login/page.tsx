@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function LoginPage() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function login() {
@@ -25,20 +27,28 @@ export default function LoginPage() {
         password,
       });
 
+      if (!error && !data.user.email_confirmed_at) {
+  await supabase.auth.signOut();
+
+  alert(
+    "⚠️ Please verify your email before logging in.\n\nCheck your inbox and click the verification link."
+  );
+
+  setLoading(false);
+  return;
+}
     if (error) {
       alert(error.message);
       setLoading(false);
       return;
     }
 
-    // Load username from users table
     const { data: profile } = await supabase
       .from("users")
       .select("username")
       .eq("email", email)
       .single();
 
-    // Save session information
     localStorage.setItem("currentUserId", data.user.id);
     localStorage.setItem(
       "currentUser",
@@ -50,101 +60,152 @@ export default function LoginPage() {
     router.push("/dashboard");
   }
 
-    return (
-  <main
-    style={{
-      minHeight: "100vh",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      padding: "20px",
-      background:
-        "linear-gradient(135deg,#020617,#1e1b4b,#7c3aed)",
-    }}
-  >
-    <div
+  return (
+    <main
       style={{
-        width: "100%",
-        maxWidth: "450px",
-        background: "#ffffff",
-        borderRadius: "24px",
-        padding: "35px",
-        boxShadow: "0 25px 60px rgba(0,0,0,.25)",
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "20px",
+        background:
+          "linear-gradient(135deg,#020617,#1e1b4b,#7c3aed)",
       }}
     >
       <div
         style={{
-          textAlign: "center",
-          marginBottom: "30px",
+          width: "100%",
+          maxWidth: "450px",
+          background: "#ffffff",
+          borderRadius: "24px",
+          padding: "35px",
+          boxShadow: "0 25px 60px rgba(0,0,0,.25)",
         }}
       >
-        <h1
+        <div
           style={{
-            fontSize: "34px",
-            fontWeight: "800",
-            color: "#111827",
-            marginBottom: "10px",
+            textAlign: "center",
+            marginBottom: "30px",
           }}
         >
-          Welcome Back 👋
-        </h1>
+          <h1
+            style={{
+              fontSize: "34px",
+              fontWeight: "800",
+              color: "#111827",
+              marginBottom: "10px",
+            }}
+          >
+            Welcome Back 👋
+          </h1>
+
+          <p
+            style={{
+              color: "#6b7280",
+              fontSize: "15px",
+            }}
+          >
+            Login to your EarnCapital account
+          </p>
+        </div>
+
+        <input
+          type="email"
+          placeholder="Email Address"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={input}
+        />
+
+        <div
+          style={{
+            position: "relative",
+            marginBottom: "16px",
+          }}
+        >
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{
+              ...input,
+              marginBottom: "0",
+              paddingRight: "50px",
+            }}
+          />
+<p
+  style={{
+    textAlign: "right",
+    marginBottom: "20px",
+  }}
+>
+  <a
+    href="/forgot-password"
+    style={{
+      color: "#2563eb",
+      textDecoration: "none",
+      fontWeight: "bold",
+    }}
+  >
+    Forgot Password?
+  </a>
+</p>
+          <button
+            type="button"
+            onClick={() =>
+              setShowPassword(!showPassword)
+            }
+            style={{
+              position: "absolute",
+              right: "15px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "#6b7280",
+              fontSize: "18px",
+            }}
+          >
+            {showPassword ? (
+              <FaEyeSlash />
+            ) : (
+              <FaEye />
+            )}
+          </button>
+        </div>
+
+        <button
+          onClick={login}
+          disabled={loading}
+          style={button}
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
 
         <p
           style={{
+            textAlign: "center",
+            marginTop: "22px",
             color: "#6b7280",
-            fontSize: "15px",
           }}
         >
-          Login to your EarnCapital account
+          Don't have an account?{" "}
+          <a
+            href="/register"
+            style={{
+              color: "#2563eb",
+              fontWeight: "700",
+              textDecoration: "none",
+            }}
+          >
+            Create Account
+          </a>
         </p>
       </div>
-
-      <input
-        type="email"
-        placeholder="Email Address"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        style={input}
-      />
-
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        style={input}
-      />
-
-      <button
-        onClick={login}
-        disabled={loading}
-        style={button}
-      >
-        {loading ? "Logging in..." : "Login"}
-      </button>
-
-      <p
-        style={{
-          textAlign: "center",
-          marginTop: "22px",
-          color: "#6b7280",
-        }}
-      >
-        Don't have an account?{" "}
-        <a
-          href="/register"
-          style={{
-            color: "#2563eb",
-            fontWeight: "700",
-            textDecoration: "none",
-          }}
-        >
-          Create Account
-        </a>
-      </p>
-    </div>
-  </main>
-);
+    </main>
+  );
 }
 
 const input = {

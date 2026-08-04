@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -11,14 +12,23 @@ export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState(false);
+
   const [referralCode, setReferralCode] = useState("");
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(
+      window.location.search
+    );
+
     const ref = params.get("ref");
 
     if (ref) {
@@ -51,10 +61,11 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    const { data, error } =
+      await supabase.auth.signUp({
+        email,
+        password,
+      });
 
     if (error) {
       alert(error.message);
@@ -65,9 +76,8 @@ export default function RegisterPage() {
     const user = data.user;
 
     if (user) {
-      const { error: profileError } = await supabase
-        .from("users")
-        .insert([
+      const { error: profileError } =
+        await supabase.from("users").insert([
           {
             id: user.id,
             full_name: fullName,
@@ -88,12 +98,14 @@ export default function RegisterPage() {
       }
     }
 
-    alert(
-      "Account created successfully. Please verify your email."
-    );
+ alert(
+  "🎉 Account created successfully!\n\nA verification email has been sent.\n\nPlease verify your email before logging in."
+);
 
     router.push("/login");
-  };return (
+  };
+
+  return (
     <main
       style={{
         minHeight: "100vh",
@@ -113,7 +125,7 @@ export default function RegisterPage() {
           borderRadius: "28px",
           padding: "35px",
           boxShadow:
-            "0 25px 60px rgba(0,0,0,0.35)",
+            "0 25px 60px rgba(0,0,0,.35)",
         }}
       >
         <div
@@ -141,9 +153,7 @@ export default function RegisterPage() {
           >
             Create your account and start your journey 🚀
           </p>
-        </div>
-
-        <input
+        </div><input
           placeholder="Full Name"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
@@ -172,23 +182,99 @@ export default function RegisterPage() {
           style={input}
         />
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={input}
-        />
+        <div
+          style={{
+            position: "relative",
+            marginBottom: "16px",
+          }}
+        >
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{
+              ...input,
+              marginBottom: "0",
+              paddingRight: "50px",
+            }}
+          />
 
-        <input
-          type="password"
-          placeholder="Confirm Password"
-          value={confirmPassword}
-          onChange={(e) =>
-            setConfirmPassword(e.target.value)
-          }
-          style={input}
-        />
+          <button
+            type="button"
+            onClick={() =>
+              setShowPassword(!showPassword)
+            }
+            style={{
+              position: "absolute",
+              right: "15px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "#6b7280",
+              fontSize: "18px",
+            }}
+          >
+            {showPassword ? (
+              <FaEyeSlash />
+            ) : (
+              <FaEye />
+            )}
+          </button>
+        </div>
+
+        <div
+          style={{
+            position: "relative",
+            marginBottom: "16px",
+          }}
+        >
+          <input
+            type={
+              showConfirmPassword
+                ? "text"
+                : "password"
+            }
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChange={(e) =>
+              setConfirmPassword(e.target.value)
+            }
+            style={{
+              ...input,
+              marginBottom: "0",
+              paddingRight: "50px",
+            }}
+          />
+
+          <button
+            type="button"
+            onClick={() =>
+              setShowConfirmPassword(
+                !showConfirmPassword
+              )
+            }
+            style={{
+              position: "absolute",
+              right: "15px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "#6b7280",
+              fontSize: "18px",
+            }}
+          >
+            {showConfirmPassword ? (
+              <FaEyeSlash />
+            ) : (
+              <FaEye />
+            )}
+          </button>
+        </div>
 
         <input
           placeholder="Referral Code (Optional)"
@@ -247,6 +333,7 @@ export default function RegisterPage() {
             Login
           </a>
         </p>
+
       </div>
     </main>
   );
@@ -260,9 +347,9 @@ export default function RegisterPage() {
   color: "#111827",
   fontSize: "15px",
   outline: "none",
+  paddingRight: "50px",
   boxSizing: "border-box" as const,
 };
-
 
 const button = {
   width: "100%",
