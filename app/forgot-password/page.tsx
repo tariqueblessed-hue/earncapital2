@@ -9,7 +9,7 @@ export default function ForgotPassword() {
 
   async function resetPassword() {
     if (!email) {
-      alert("Enter your email.");
+      alert("Please enter your email.");
       return;
     }
 
@@ -26,7 +26,9 @@ export default function ForgotPassword() {
       return;
     }
 
-    alert("✅ Password reset email sent.\n\nCheck your inbox.");
+    alert(
+      "✅ Password reset email sent.\n\nCheck your inbox and spam folder."
+    );
   }
 
   return (
@@ -38,20 +40,40 @@ export default function ForgotPassword() {
         alignItems: "center",
         background:
           "linear-gradient(135deg,#020617,#1e1b4b,#7c3aed)",
+        padding: "20px",
       }}
     >
       <div
         style={{
-          width: "420px",
-          background: "white",
+          width: "100%",
+          maxWidth: "420px",
+          background: "#ffffff",
           padding: "35px",
           borderRadius: "20px",
+          boxShadow: "0 20px 50px rgba(0,0,0,.25)",
         }}
       >
-        <h1>Forgot Password</h1>
+        <h1
+          style={{
+            color: "#111827",
+            fontSize: "32px",
+            fontWeight: "800",
+            marginBottom: "10px",
+            textAlign: "center",
+          }}
+        >
+          Forgot Password
+        </h1>
 
-        <p>
-          Enter your email to receive a password reset link.
+        <p
+          style={{
+            color: "#6b7280",
+            textAlign: "center",
+            marginBottom: "20px",
+            lineHeight: "1.5",
+          }}
+        >
+          Enter your email address to receive a password reset link.
         </p>
 
         <input
@@ -62,14 +84,19 @@ export default function ForgotPassword() {
           style={{
             width: "100%",
             padding: "15px",
-            marginTop: "20px",
             borderRadius: "12px",
-            border: "1px solid #ddd",
+            border: "1px solid #d1d5db",
+            background: "#ffffff",
+            color: "#111827",
+            fontSize: "16px",
+            outline: "none",
+            boxSizing: "border-box",
           }}
         />
 
         <button
           onClick={resetPassword}
+          disabled={loading}
           style={{
             width: "100%",
             marginTop: "20px",
@@ -77,8 +104,10 @@ export default function ForgotPassword() {
             border: "none",
             borderRadius: "12px",
             background: "#2563eb",
-            color: "white",
-            fontWeight: "bold",
+            color: "#ffffff",
+            fontWeight: "700",
+            fontSize: "16px",
+            cursor: "pointer",
           }}
         >
           {loading ? "Sending..." : "Send Reset Link"}
