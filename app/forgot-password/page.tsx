@@ -75,24 +75,22 @@ export default function ForgotPassword() {
         >
           Enter your email address to receive a password reset link.
         </p>
-
-        <input
-          type="email"
-          placeholder="Email Address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "15px",
-            borderRadius: "12px",
-            border: "1px solid #d1d5db",
-            background: "#ffffff",
-            color: "#111827",
-            fontSize: "16px",
-            outline: "none",
-            boxSizing: "border-box",
-          }}
-        />
+<input
+  type="email"
+  placeholder="Email Address"
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+  style={{
+    width: "100%",
+    padding: "15px",
+    marginTop: "20px",
+    borderRadius: "12px",
+    border: "1px solid #ddd",
+    color: "#111827",
+    background: "#ffffff",
+    fontSize: "16px",
+  }}
+/>
 
         <button
           onClick={resetPassword}
