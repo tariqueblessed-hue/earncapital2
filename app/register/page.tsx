@@ -99,10 +99,10 @@ export default function RegisterPage() {
     }
 
  alert(
-  "🎉 Account created successfully!\n\nA verification email has been sent.\n\nPlease verify your email before logging in."
+  "🎉 Registration successful!\n\nWe've sent a verification email to your inbox.\n\nOpen your email, click the verification link, then come back and log in."
 );
 
-    router.push("/login");
+router.push("/login");
   };
 
   return (

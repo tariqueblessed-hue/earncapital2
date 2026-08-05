@@ -2,429 +2,220 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
 
+export default function ProfilePage() {
+  const [loading, setLoading] = useState(true);
 
-export default function ProfilePage(){
+  const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
 
-
-  const [username,setUsername] =
-    useState("");
-
-  const [completed,setCompleted] =
-    useState(0);
-
-  const [rewards,setRewards] =
-    useState(0);
-
-  const [accuracy,setAccuracy] =
-    useState(0);
-
-  const [xp,setXp] =
-    useState(0);
-
-  const [level,setLevel] =
-    useState(1);
-
-
-  const [loading,setLoading] =
-    useState(true);
-
-
-
-  useEffect(()=>{
-
+  useEffect(() => {
     loadProfile();
+  }, []);
 
-  },[]);
+  async function loadProfile() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-
-
-  async function loadProfile(){
-
-
-    const user =
-      localStorage.getItem(
-        "currentUser"
-      );
-
-
-    if(!user){
-
-      window.location.href =
-        "/login";
-
+    if (!user || !user.email) {
+      window.location.href = "/login";
       return;
-
     }
 
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", user.email)
+      .single();
 
-    setUsername(user);
-
-
-
-    const {data,error} =
-      await supabase
-        .from("task_answers")
-        .select(
-          "correct,reward_paid"
-        )
-        .eq(
-          "username",
-          user
-        );
-
-
-
-    if(error){
-
-      alert(error.message);
+    if (error || !data) {
+      alert("Unable to load profile.");
+      setLoading(false);
       return;
-
     }
 
-
-
-    if(data){
-
-
-      const total =
-        data.length;
-
-
-      const correct =
-        data.filter(
-          (item)=>
-          item.correct === true
-        ).length;
-
-
-
-      const money =
-        data.reduce(
-          (sum,item)=>
-          sum +
-          Number(
-            item.reward_paid || 0
-          ),
-          0
-        );
-
-
-
-      const userXP =
-        total * 10;
-
-
-
-      setCompleted(
-        total
-      );
-
-
-      setRewards(
-        money
-      );
-
-
-      setXp(
-        userXP
-      );
-
-
-      setLevel(
-        Math.floor(
-          userXP / 100
-        ) + 1
-      );
-
-
-
-      if(total > 0){
-
-        setAccuracy(
-          Math.round(
-            (correct / total)
-            * 100
-          )
-        );
-
-      }
-
-    }
-
+    setFullName(data.full_name || "");
+    setUsername(data.username || "");
+    setPhone(data.phone || "");
+    setEmail(data.email || "");
 
     setLoading(false);
-
-  }if(loading){
-
-    return(
-
-      <main
-        style={{
-          minHeight:"100vh",
-          background:"#020617",
-          color:"white",
-          display:"flex",
-          justifyContent:"center",
-          alignItems:"center",
-          fontSize:"25px"
-        }}
-      >
-
-        Loading Profile...
-
-      </main>
-
-    );
-
   }
 
+  async function saveProfile() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
+    if (!user?.email) return;
 
-  const rank =
-    level >= 20
-    ? "💎 Diamond"
-    : level >= 10
-    ? "🥇 Gold"
-    : level >= 5
-    ? "🥈 Silver"
-    : "🥉 Bronze";
+    const { error } = await supabase
+      .from("users")
+      .update({
+        full_name: fullName,
+        username: username,
+        phone: phone,
+      })
+      .eq("email", user.email);
 
+    if (error) {
+      alert(error.message);
+      return;
+    }
 
+    alert("✅ Profile updated successfully.");
+  }
 
-  const nextLevelXP =
-    level * 100;
-
-
-
-  const progress =
-    Math.min(
-      (xp / nextLevelXP) * 100,
-      100
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div
+          style={{
+            color: "white",
+            fontSize: "24px",
+            padding: "50px",
+          }}
+        >
+          Loading Profile...
+        </div>
+      </DashboardLayout>
     );
+  }
 
-
-
-  return(
-
-    <main
-
-      style={{
-        minHeight:"100vh",
-        background:
-        "linear-gradient(135deg,#020617,#1e1b4b,#312e81)",
-        color:"white",
-        padding:"30px",
-        fontFamily:"Arial"
-      }}
-
-    >
-
-
-      <h1>
-        👤 My Profile
-      </h1>
-
-
-
-      <div
-
+  return (
+    <DashboardLayout><div
         style={{
-          background:"#0f172a",
-          padding:"30px",
-          borderRadius:"25px",
-          marginTop:"30px",
-          border:
-          "1px solid #334155"
+          maxWidth: "700px",
+          margin: "30px auto",
+          background: "#111827",
+          borderRadius: "20px",
+          padding: "30px",
+          color: "white",
         }}
-
       >
+        <h1
+          style={{
+            fontSize: "34px",
+            fontWeight: "800",
+            marginBottom: "10px",
+          }}
+        >
+          👤 My Profile
+        </h1>
 
-
-        <h2>
-          👋 {username}
-        </h2>
-
-
-        <h2>
-          {rank}
-        </h2>
-
-
-
-        <h3>
-          ⭐ Level {level}
-        </h3>
-
-
-
-        <p>
-          XP:
-          {" "}
-          {xp}
-          /
-          {nextLevelXP}
+        <p
+          style={{
+            color: "#94a3b8",
+            marginBottom: "30px",
+          }}
+        >
+          Update your personal information.
         </p>
 
-
-
         <div
-
           style={{
-            width:"100%",
-            height:"18px",
-            background:"#334155",
-            borderRadius:"20px"
+            display: "flex",
+            justifyContent: "center",
+            marginBottom: "30px",
           }}
-
         >
-
           <div
-
             style={{
-              width:`${progress}%`,
-              height:"100%",
-              background:
-              "linear-gradient(90deg,#22c55e,#3b82f6)",
-              borderRadius:"20px"
+              width: "110px",
+              height: "110px",
+              borderRadius: "50%",
+              background: "linear-gradient(135deg,#2563eb,#7c3aed)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              fontSize: "42px",
+              fontWeight: "800",
+              color: "white",
             }}
-
-          />
-
+          >
+            {username ? username.charAt(0).toUpperCase() : "U"}
+          </div>
         </div>
 
+        <label style={label}>Full Name</label>
 
+        <input
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          style={input}
+        />
+
+        <label style={label}>Username</label>
+
+        <input
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          style={input}
+        />
+
+        <label style={label}>Phone Number</label>
+
+        <input
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          style={input}
+        />
+
+        <label style={label}>Email Address</label>
+
+        <input
+          value={email}
+          disabled
+          style={{
+            ...input,
+            opacity: 0.7,
+            cursor: "not-allowed",
+          }}
+        /><button
+          onClick={saveProfile}
+          style={{
+            width: "100%",
+            marginTop: "30px",
+            padding: "16px",
+            border: "none",
+            borderRadius: "14px",
+            background: "linear-gradient(90deg,#2563eb,#7c3aed)",
+            color: "white",
+            fontSize: "17px",
+            fontWeight: "700",
+            cursor: "pointer",
+            boxShadow: "0 10px 25px rgba(124,58,237,.35)",
+          }}
+        >
+          💾 Save Changes
+        </button>
 
       </div>
 
-
-
-      <div
-
-        style={{
-          display:"grid",
-          gridTemplateColumns:
-          "repeat(auto-fit,minmax(220px,1fr))",
-          gap:"20px",
-          marginTop:"30px"
-        }}
-
-      >
-
-
-        <StatCard
-
-          title="Tasks Completed"
-          value={completed}
-          icon="✅"
-
-        />
-
-
-        <StatCard
-
-          title="Total Earned"
-          value={`KES ${rewards}`}
-          icon="💰"
-
-        />
-
-
-        <StatCard
-
-          title="Accuracy"
-          value={`${accuracy}%`}
-          icon="🎯"
-
-        />
-
-
-      </div><button
-
-        onClick={()=>
-          window.location.href =
-          "/dashboard"
-        }
-
-        style={{
-          marginTop:"30px",
-          width:"100%",
-          padding:"14px",
-          border:"none",
-          borderRadius:"12px",
-          background:"#334155",
-          color:"white",
-          cursor:"pointer",
-          fontSize:"16px",
-          fontWeight:"bold"
-        }}
-
-      >
-
-        ← Back Dashboard
-
-      </button>
-
-
-    </main>
-
+    </DashboardLayout>
   );
-
 }
 
+const label = {
+  display: "block" as const,
+  marginTop: "18px",
+  marginBottom: "8px",
+  color: "#cbd5e1",
+  fontWeight: "600",
+};
 
-
-function StatCard({
-
-  title,
-  value,
-  icon
-
-}:{
-
-  title:string;
-  value:any;
-  icon:string;
-
-}){
-
-
-  return (
-
-    <div
-
-      style={{
-        background:"#0f172a",
-        padding:"25px",
-        borderRadius:"20px",
-        border:
-        "1px solid #334155",
-        textAlign:"center"
-      }}
-
-    >
-
-      <h2>
-        {icon}
-      </h2>
-
-
-      <h3>
-        {title}
-      </h3>
-
-
-      <h1
-        style={{
-          color:"#38bdf8"
-        }}
-      >
-        {value}
-      </h1>
-
-
-    </div>
-
-  );
-
-}
+const input = {
+  width: "100%",
+  padding: "15px",
+  borderRadius: "12px",
+  border: "1px solid #374151",
+  background: "#1f2937",
+  color: "#ffffff",
+  fontSize: "15px",
+  outline: "none",
+  boxSizing: "border-box" as const,
+};

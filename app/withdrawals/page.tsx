@@ -34,12 +34,45 @@ export default function WithdrawPage() {
 
   const [account, setAccount] = useState("");
 
+const [mpesaNumber, setMpesaNumber] = useState("");
+const [mpesaName, setMpesaName] = useState("");
+
+const [paypalEmail, setPaypalEmail] = useState("");
+
+const [bankName, setBankName] = useState("");
+const [bankAccount, setBankAccount] = useState("");
+const [bankAccountName, setBankAccountName] = useState("");
+
   const [history, setHistory] = useState<Withdrawal[]>([]);
 
   useEffect(() => {
     loadData();
   }, []);
+useEffect(() => {
+  if (method === "M-Pesa") {
+    setAccount(
+      `${mpesaNumber}${mpesaName ? " - " + mpesaName : ""}`
+    );
+  }
 
+  if (method === "PayPal") {
+    setAccount(paypalEmail);
+  }
+
+  if (method === "Bank") {
+    setAccount(
+      `${bankName} | ${bankAccount} | ${bankAccountName}`
+    );
+  }
+}, [
+  method,
+  mpesaNumber,
+  mpesaName,
+  paypalEmail,
+  bankName,
+  bankAccount,
+  bankAccountName,
+]);
   async function loadData() {
 
     const {
@@ -332,19 +365,37 @@ setEmail(user.email ?? "");
         <option>Bank</option>
       </select>
 
-      <input
-        placeholder="Phone / Account Number"
-        value={account}
-        onChange={(e) =>
-          setAccount(e.target.value)
-        }
-        style={{
-          width: "100%",
-          padding: "14px",
-          marginTop: "15px",
-          borderRadius: "10px",
-        }}
-      />
+     
+   <div
+  style={{
+    marginTop: "15px",
+    background: "#1e293b",
+    border: "1px solid #334155",
+    borderRadius: "12px",
+    padding: "16px",
+  }}
+>
+  {method === "M-Pesa" && (
+    <>
+      <p><strong>📱 M-Pesa Number:</strong> {mpesaNumber || "Not saved"}</p>
+      <p><strong>👤 Account Name:</strong> {mpesaName || "Not saved"}</p>
+    </>
+  )}
+
+  {method === "PayPal" && (
+    <>
+      <p><strong>💵 PayPal Email:</strong> {paypalEmail || "Not saved"}</p>
+    </>
+  )}
+
+  {method === "Bank" && (
+    <>
+      <p><strong>🏦 Bank:</strong> {bankName || "Not saved"}</p>
+      <p><strong>💳 Account Number:</strong> {bankAccount || "Not saved"}</p>
+      <p><strong>👤 Account Name:</strong> {bankAccountName || "Not saved"}</p>
+    </>
+  )}
+</div>
 
       <button
         onClick={submitWithdrawal}

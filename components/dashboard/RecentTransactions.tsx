@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 type Transaction = {
@@ -12,6 +13,9 @@ type Transaction = {
 };
 
 export default function RecentTransactions() {
+
+const router = useRouter();
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
@@ -86,13 +90,14 @@ export default function RecentTransactions() {
       });
     });
 
-    items.sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() -
-        new Date(a.created_at).getTime()
-    );
+   items.sort(
+  (a, b) =>
+    new Date(b.created_at).getTime() -
+    new Date(a.created_at).getTime()
+);
 
-    setTransactions(items);
+// Show only the latest 3 on dashboard
+setTransactions(items.slice(0, 3));
   }return (
     <div
       style={{
@@ -102,16 +107,38 @@ export default function RecentTransactions() {
         boxShadow: "0 8px 20px rgba(0,0,0,.2)",
       }}
     >
-      <h2
-        style={{
-          color: "white",
-          marginBottom: "18px",
-          fontSize: "22px",
-        }}
-      >
-        📜 Recent Transactions
-      </h2>
+  <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "20px",
+  }}
+>
+  <h2
+    style={{
+      color: "white",
+      fontSize: "22px",
+      margin: 0,
+    }}
+  >
+    📜 Recent Transactions
+  </h2>
 
+  <button
+    onClick={() => router.push("/transactions")}
+    style={{
+      background: "transparent",
+      border: "none",
+      color: "#3b82f6",
+      fontWeight: "700",
+      cursor: "pointer",
+      fontSize: "14px",
+    }}
+  >
+    View All →
+  </button>
+</div>
       {transactions.length === 0 ? (
         <p
           style={{
@@ -123,52 +150,81 @@ export default function RecentTransactions() {
           No transactions yet.
         </p>
       ) : (
-        <table
+        <div
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    gap: "15px",
+  }}
+>
+  {transactions.map((item) => (
+    <div
+      key={item.id}
+      style={{
+        background: "#1f2937",
+        borderRadius: "15px",
+        padding: "16px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}
+    >
+      <div>
+        <div
           style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            color: "white",
+            color: "#ffffff",
+            fontWeight: "700",
+            fontSize: "16px",
           }}
         >
-          <thead>
-            <tr>
-              <th style={th}>Type</th>
-              <th style={th}>Amount</th>
-              <th style={th}>Status</th>
-            </tr>
-          </thead>
+          {item.type}
+        </div>
 
-          <tbody>
-            {transactions.map((item) => (
-              <tr key={item.id}>
-                <td style={td}>{item.type}</td>
+        <div
+          style={{
+            color: "#9ca3af",
+            fontSize: "13px",
+            marginTop: "5px",
+          }}
+        >
+          {new Date(item.created_at).toLocaleDateString()}
+        </div>
+      </div>
 
-                <td style={td}>
-                  KES {item.amount.toLocaleString()}
-                </td>
+      <div style={{ textAlign: "right" }}>
+        <div
+          style={{
+            color: "#22c55e",
+            fontWeight: "800",
+            fontSize: "17px",
+          }}
+        >
+          KES {item.amount.toLocaleString()}
+        </div>
 
-                <td style={td}>
-                  <span
-                    style={{
-                      background:
-                        item.status === "Approved" ||
-                        item.status === "Completed"
-                          ? "#16a34a"
-                          : item.status === "Pending"
-                          ? "#ca8a04"
-                          : "#dc2626",
-                      padding: "5px 10px",
-                      borderRadius: "20px",
-                      fontSize: "12px",
-                    }}
-                  >
-                    {item.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <span
+          style={{
+            display: "inline-block",
+            marginTop: "6px",
+            background:
+              item.status === "Approved" ||
+              item.status === "Completed"
+                ? "#16a34a"
+                : item.status === "Pending"
+                ? "#ca8a04"
+                : "#dc2626",
+            padding: "5px 12px",
+            borderRadius: "20px",
+            fontSize: "12px",
+            color: "#fff",
+          }}
+        >
+          {item.status}
+        </span>
+      </div>
+    </div>
+  ))}
+</div>
       )}
     </div>
   );

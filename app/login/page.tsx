@@ -57,6 +57,8 @@ export default function LoginPage() {
 
     alert("✅ Login successful!");
 
+setLoading(false);
+
     router.push("/dashboard");
   }
 

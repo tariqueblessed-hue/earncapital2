@@ -1,19 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 
 export default function SettingsPage() {
+  const router = useRouter();
+
   const [loading, setLoading] = useState(true);
 
   const [username, setUsername] = useState("");
-
   const [email, setEmail] = useState("");
-
   const [phone, setPhone] = useState("");
-
   const [balance, setBalance] = useState(0);
 
   useEffect(() => {
@@ -63,19 +63,18 @@ export default function SettingsPage() {
   }
 
   return (
-    <DashboardLayout>
-
-      <div
+    <DashboardLayout><div
         style={{
           maxWidth: "1100px",
           margin: "30px auto",
           color: "white",
         }}
-      ><h1
+      >
+        <h1
           style={{
             fontSize: "40px",
+            fontWeight: "800",
             marginBottom: "10px",
-            fontWeight: "bold",
           }}
         >
           ⚙️ Settings
@@ -94,100 +93,112 @@ export default function SettingsPage() {
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))",
-            gap: "25px",
+            gap: "22px",
           }}
         >
+
           <SettingsCard
             icon="👤"
             title="Profile"
             subtitle={username}
+            onClick={() => router.push("/profile")}
           />
 
           <SettingsCard
             icon="📧"
             title="Email"
             subtitle={email}
+            onClick={() => router.push("/profile")}
           />
 
           <SettingsCard
             icon="📱"
             title="Phone Number"
             subtitle={phone || "Not Added"}
+            onClick={() => router.push("/profile")}
           />
 
           <SettingsCard
             icon="💰"
             title="Wallet Balance"
             subtitle={`KES ${balance.toLocaleString()}`}
+            onClick={() => router.push("/transactions")}
           />
 
           <SettingsCard
             icon="🔒"
             title="Security"
             subtitle="Change Password"
-          />
-
-          <SettingsCard
+            onClick={() => router.push("/change-password")}
+          /><SettingsCard
             icon="🔔"
             title="Notifications"
             subtitle="Manage Notifications"
+            onClick={() => router.push("/notifications")}
           />
 
           <SettingsCard
             icon="🎨"
             title="Appearance"
             subtitle="Light / Dark Mode"
+            onClick={() => alert("Coming Soon")}
           />
 
           <SettingsCard
             icon="💳"
             title="Payment Methods"
-            subtitle="Manage Mpesa"
+            subtitle="Manage M-Pesa"
+            onClick={() => router.push("/payment-methods")}
           />
 
           <SettingsCard
             icon="🛡️"
             title="Privacy"
             subtitle="Privacy Settings"
+            onClick={() => router.push("/privacy")}
           />
+
         </div>
 
         <button
-          style={{
-            marginTop: "35px",
-            width: "100%",
-            padding: "18px",
-            border: "none",
-            borderRadius: "16px",
-            background: "#dc2626",
-            color: "white",
-            fontSize: "18px",
-            fontWeight: "bold",
-            cursor: "pointer",
-          }}
           onClick={async () => {
             await supabase.auth.signOut();
             window.location.href = "/login";
           }}
+          style={{
+            width: "100%",
+            marginTop: "35px",
+            padding: "18px",
+            border: "none",
+            borderRadius: "16px",
+            background: "#dc2626",
+            color: "#fff",
+            fontSize: "18px",
+            fontWeight: "700",
+            cursor: "pointer",
+          }}
         >
           🚪 Logout
-        </button></div>
+        </button>
+
+      </div>
 
     </DashboardLayout>
   );
-}
-
-function SettingsCard({
+}function SettingsCard({
   icon,
   title,
   subtitle,
+  onClick,
 }: {
   icon: string;
   title: string;
   subtitle: string;
+  onClick?: () => void;
 }) {
   return (
     <div
+      onClick={onClick}
       style={{
         background: "#0f172a",
         border: "1px solid #334155",
@@ -196,7 +207,8 @@ function SettingsCard({
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        transition: "0.3s",
+        cursor: "pointer",
+        transition: "all 0.25s ease",
       }}
     >
       <div>
@@ -205,6 +217,7 @@ function SettingsCard({
             margin: 0,
             color: "white",
             fontSize: "18px",
+            fontWeight: "700",
           }}
         >
           {title}
@@ -223,10 +236,28 @@ function SettingsCard({
 
       <div
         style={{
-          fontSize: "30px",
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
         }}
       >
-        {icon}
+        <span
+          style={{
+            fontSize: "30px",
+          }}
+        >
+          {icon}
+        </span>
+
+        <span
+          style={{
+            color: "#60a5fa",
+            fontSize: "24px",
+            fontWeight: "bold",
+          }}
+        >
+          ›
+        </span>
       </div>
     </div>
   );
