@@ -1,78 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-
+import Link from "next/link";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import {
+  FaUser,
+  FaLock,
+  FaBell,
+  FaPalette,
+  FaCreditCard,
+  FaShieldAlt,
+  FaChevronRight,
+} from "react-icons/fa";
 
 export default function SettingsPage() {
-  const router = useRouter();
-
-  const [loading, setLoading] = useState(true);
-
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [balance, setBalance] = useState(0);
-
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  async function loadProfile() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user || !user.email) {
-      window.location.href = "/login";
-      return;
-    }
-
-    const { data } = await supabase
-      .from("users")
-      .select("*")
-      .eq("email", user.email)
-      .single();
-
-    if (data) {
-      setUsername(data.username || "");
-      setEmail(data.email || "");
-      setPhone(data.phone || "");
-      setBalance(Number(data.balance || 0));
-    }
-
-    setLoading(false);
-  }
-
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div
-          style={{
-            color: "white",
-            fontSize: "24px",
-            padding: "50px",
-          }}
-        >
-          Loading Settings...
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
-    <DashboardLayout><div
+    <DashboardLayout>
+      <div
         style={{
-          maxWidth: "1100px",
+          maxWidth: "850px",
           margin: "30px auto",
           color: "white",
         }}
       >
         <h1
           style={{
-            fontSize: "40px",
+            fontSize: "38px",
             fontWeight: "800",
             marginBottom: "10px",
           }}
@@ -83,182 +35,107 @@ export default function SettingsPage() {
         <p
           style={{
             color: "#94a3b8",
-            marginBottom: "30px",
+            marginBottom: "35px",
           }}
         >
-          Manage your EarnCapital account and preferences.
-        </p>
+          Manage your account settings.
+        </p><Link href="/profile" style={card}>
+          <div style={left}>
+            <FaUser size={24} color="#38bdf8" />
+            <div>
+              <h3 style={title}>Profile</h3>
+              <p style={subtitle}>Manage your personal information</p>
+            </div>
+          </div>
+          <FaChevronRight color="#94a3b8" />
+        </Link>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))",
-            gap: "22px",
-          }}
-        >
+        <Link href="/change_password" style={card}>
+          <div style={left}>
+            <FaLock size={24} color="#f97316" />
+            <div>
+              <h3 style={title}>Security</h3>
+              <p style={subtitle}>Change Password</p>
+            </div>
+          </div>
+          <FaChevronRight color="#94a3b8" />
+        </Link>
 
-          <SettingsCard
-            icon="👤"
-            title="Profile"
-            subtitle={username}
-            onClick={() => router.push("/profile")}
-          />
+        <Link href="/notifications" style={card}>
+          <div style={left}>
+            <FaBell size={24} color="#facc15" />
+            <div>
+              <h3 style={title}>Notifications</h3>
+              <p style={subtitle}>Manage Notifications</p>
+            </div>
+          </div>
+          <FaChevronRight color="#94a3b8" />
+        </Link>
 
-          <SettingsCard
-            icon="📧"
-            title="Email"
-            subtitle={email}
-            onClick={() => router.push("/profile")}
-          />
+        <Link href="/appearance" style={card}>
+          <div style={left}>
+            <FaPalette size={24} color="#f472b6" />
+            <div>
+              <h3 style={title}>Appearance</h3>
+              <p style={subtitle}>Light / Dark Mode</p>
+            </div>
+          </div>
+          <FaChevronRight color="#94a3b8" />
+        </Link>
 
-          <SettingsCard
-            icon="📱"
-            title="Phone Number"
-            subtitle={phone || "Not Added"}
-            onClick={() => router.push("/profile")}
-          />
+        <Link href="/payment_method" style={card}>
+          <div style={left}>
+            <FaCreditCard size={24} color="#22c55e" />
+            <div>
+              <h3 style={title}>Payment Methods</h3>
+              <p style={subtitle}>Manage M-Pesa, PayPal & Bank</p>
+            </div>
+          </div>
+          <FaChevronRight color="#94a3b8" />
+        </Link>
 
-          <SettingsCard
-            icon="💰"
-            title="Wallet Balance"
-            subtitle={`KES ${balance.toLocaleString()}`}
-            onClick={() => router.push("/transactions")}
-          />
-
-          <SettingsCard
-            icon="🔒"
-            title="Security"
-            subtitle="Change Password"
-            onClick={() => router.push("/change-password")}
-          /><SettingsCard
-            icon="🔔"
-            title="Notifications"
-            subtitle="Manage Notifications"
-            onClick={() => router.push("/notifications")}
-          />
-
-          <SettingsCard
-            icon="🎨"
-            title="Appearance"
-            subtitle="Light / Dark Mode"
-            onClick={() => alert("Coming Soon")}
-          />
-
-          <SettingsCard
-            icon="💳"
-            title="Payment Methods"
-            subtitle="Manage M-Pesa"
-            onClick={() => router.push("/payment-methods")}
-          />
-
-          <SettingsCard
-            icon="🛡️"
-            title="Privacy"
-            subtitle="Privacy Settings"
-            onClick={() => router.push("/privacy")}
-          />
-
-        </div>
-
-        <button
-          onClick={async () => {
-            await supabase.auth.signOut();
-            window.location.href = "/login";
-          }}
-          style={{
-            width: "100%",
-            marginTop: "35px",
-            padding: "18px",
-            border: "none",
-            borderRadius: "16px",
-            background: "#dc2626",
-            color: "#fff",
-            fontSize: "18px",
-            fontWeight: "700",
-            cursor: "pointer",
-          }}
-        >
-          🚪 Logout
-        </button>
-
-      </div>
-
+        <Link href="/privacy" style={card}>
+          <div style={left}>
+            <FaShieldAlt size={24} color="#60a5fa" />
+            <div>
+              <h3 style={title}>Privacy</h3>
+              <p style={subtitle}>Privacy Settings</p>
+            </div>
+          </div>
+          <FaChevronRight color="#94a3b8" />
+        </Link></div>
     </DashboardLayout>
   );
-}function SettingsCard({
-  icon,
-  title,
-  subtitle,
-  onClick,
-}: {
-  icon: string;
-  title: string;
-  subtitle: string;
-  onClick?: () => void;
-}) {
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        background: "#0f172a",
-        border: "1px solid #334155",
-        borderRadius: "18px",
-        padding: "22px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        cursor: "pointer",
-        transition: "all 0.25s ease",
-      }}
-    >
-      <div>
-        <h3
-          style={{
-            margin: 0,
-            color: "white",
-            fontSize: "18px",
-            fontWeight: "700",
-          }}
-        >
-          {title}
-        </h3>
-
-        <p
-          style={{
-            marginTop: "8px",
-            color: "#94a3b8",
-            fontSize: "15px",
-          }}
-        >
-          {subtitle}
-        </p>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-        }}
-      >
-        <span
-          style={{
-            fontSize: "30px",
-          }}
-        >
-          {icon}
-        </span>
-
-        <span
-          style={{
-            color: "#60a5fa",
-            fontSize: "24px",
-            fontWeight: "bold",
-          }}
-        >
-          ›
-        </span>
-      </div>
-    </div>
-  );
 }
+
+const card = {
+  display: "flex" as const,
+  justifyContent: "space-between",
+  alignItems: "center",
+  background: "#0f172a",
+  border: "1px solid #334155",
+  borderRadius: "18px",
+  padding: "22px",
+  marginBottom: "18px",
+  textDecoration: "none",
+  color: "white",
+  transition: "0.25s",
+};
+
+const left = {
+  display: "flex" as const,
+  alignItems: "center",
+  gap: "18px",
+};
+
+const title = {
+  margin: 0,
+  fontSize: "21px",
+  fontWeight: "700",
+};
+
+const subtitle = {
+  margin: "6px 0 0",
+  color: "#94a3b8",
+  fontSize: "14px",
+};
