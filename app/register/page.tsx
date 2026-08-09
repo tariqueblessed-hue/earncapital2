@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { useEarnCapitalPopup } from "@/components/notifications/EarnCapitalPopup";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { showPopup } = useEarnCapitalPopup();
 
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
@@ -25,10 +27,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(
-      window.location.search
-    );
-
+    const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
 
     if (ref) {
@@ -38,71 +37,108 @@ export default function RegisterPage() {
 
   const register = async () => {
     if (
-      !fullName ||
-      !username ||
-      !email ||
-      !phone ||
+      !fullName.trim() ||
+      !username.trim() ||
+      !email.trim() ||
+      !phone.trim() ||
       !password ||
       !confirmPassword
     ) {
-      alert("Please fill in all fields.");
+      showPopup(
+        "warning",
+        "Almost there 👀",
+        "Please fill in all the required fields."
+      );
       return;
     }
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match.");
+      showPopup(
+        "error",
+        "Passwords don't match",
+        "Please make sure both password fields contain the same password."
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      showPopup(
+        "warning",
+        "Password too short",
+        "Your password must contain at least 6 characters."
+      );
       return;
     }
 
     if (!agree) {
-      alert("Please accept Terms & Conditions.");
+      showPopup(
+        "warning",
+        "Terms & Conditions",
+        "Please accept the Terms & Conditions before creating your account."
+      );
       return;
     }
 
     setLoading(true);
 
-    const { data, error } =
-      await supabase.auth.signUp({
-        email,
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
         password,
+        options: {
+          data: {
+            full_name: fullName.trim(),
+            username: username.trim(),
+            phone: phone.trim(),
+            referral_code: username.trim(),
+            referred_by: referralCode.trim() || null,
+          },
+        },
       });
 
-    if (error) {
-      alert(error.message);
-      setLoading(false);
-      return;
-    }
-
-    const user = data.user;
-
-    if (user) {
-      const { error: profileError } =
-        await supabase.from("users").insert([
-          {
-            id: user.id,
-            full_name: fullName,
-            username,
-            email,
-            phone,
-            balance: 0,
-            referral_code: username,
-            referred_by: referralCode || null,
-            is_activated: false,
-          },
-        ]);
-
-      if (profileError) {
-        alert(profileError.message);
+      if (error) {
+        showPopup(
+          "error",
+          "Registration failed",
+          error.message
+        );
         setLoading(false);
         return;
       }
+
+      if (!data.user) {
+        showPopup(
+          "error",
+          "Registration failed",
+          "We couldn't create your account. Please try again."
+        );
+        setLoading(false);
+        return;
+      }
+
+      await supabase.auth.signOut();
+
+      showPopup(
+        "celebration",
+        "Congratulations! 🎉",
+        "Your EarnCapital account has been created successfully! We've sent a verification email to your inbox. Verify your email before logging in.",
+        "Go to Login"
+      );
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 2500);
+    } catch (error) {
+      console.error("Registration error:", error);
+
+      showPopup(
+        "error",
+        "Something went wrong",
+        "We couldn't complete your registration. Please try again."
+      );
+
+      setLoading(false);
     }
-
- alert(
-  "🎉 Registration successful!\n\nWe've sent a verification email to your inbox.\n\nOpen your email, click the verification link, then come back and log in."
-);
-
-router.push("/login");
   };
 
   return (
@@ -124,8 +160,7 @@ router.push("/login");
           background: "rgba(255,255,255,0.96)",
           borderRadius: "28px",
           padding: "35px",
-          boxShadow:
-            "0 25px 60px rgba(0,0,0,.35)",
+          boxShadow: "0 25px 60px rgba(0,0,0,.35)",
         }}
       >
         <div
@@ -153,7 +188,9 @@ router.push("/login");
           >
             Create your account and start your journey 🚀
           </p>
-        </div><input
+        </div>
+
+        <input
           placeholder="Full Name"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
@@ -182,6 +219,7 @@ router.push("/login");
           style={input}
         />
 
+        {/* Password */}
         <div
           style={{
             position: "relative",
@@ -202,29 +240,14 @@ router.push("/login");
 
           <button
             type="button"
-            onClick={() =>
-              setShowPassword(!showPassword)
-            }
-            style={{
-              position: "absolute",
-              right: "15px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              color: "#6b7280",
-              fontSize: "18px",
-            }}
+            onClick={() => setShowPassword(!showPassword)}
+            style={eyeButton}
           >
-            {showPassword ? (
-              <FaEyeSlash />
-            ) : (
-              <FaEye />
-            )}
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
           </button>
         </div>
 
+        {/* Confirm Password */}
         <div
           style={{
             position: "relative",
@@ -232,11 +255,7 @@ router.push("/login");
           }}
         >
           <input
-            type={
-              showConfirmPassword
-                ? "text"
-                : "password"
-            }
+            type={showConfirmPassword ? "text" : "password"}
             placeholder="Confirm Password"
             value={confirmPassword}
             onChange={(e) =>
@@ -252,21 +271,9 @@ router.push("/login");
           <button
             type="button"
             onClick={() =>
-              setShowConfirmPassword(
-                !showConfirmPassword
-              )
+              setShowConfirmPassword(!showConfirmPassword)
             }
-            style={{
-              position: "absolute",
-              right: "15px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              color: "#6b7280",
-              fontSize: "18px",
-            }}
+            style={eyeButton}
           >
             {showConfirmPassword ? (
               <FaEyeSlash />
@@ -279,9 +286,7 @@ router.push("/login");
         <input
           placeholder="Referral Code (Optional)"
           value={referralCode}
-          onChange={(e) =>
-            setReferralCode(e.target.value)
-          }
+          onChange={(e) => setReferralCode(e.target.value)}
           style={input}
         />
 
@@ -307,11 +312,13 @@ router.push("/login");
         <button
           onClick={register}
           disabled={loading}
-          style={button}
+          style={{
+            ...button,
+            opacity: loading ? 0.7 : 1,
+            cursor: loading ? "not-allowed" : "pointer",
+          }}
         >
-          {loading
-            ? "Creating Account..."
-            : "Create Account"}
+          {loading ? "Creating Account..." : "Create Account"}
         </button>
 
         <p
@@ -333,11 +340,12 @@ router.push("/login");
             Login
           </a>
         </p>
-
       </div>
     </main>
   );
-}const input = {
+}
+
+const input = {
   width: "100%",
   padding: "16px",
   marginBottom: "16px",
@@ -347,8 +355,19 @@ router.push("/login");
   color: "#111827",
   fontSize: "15px",
   outline: "none",
-  paddingRight: "50px",
   boxSizing: "border-box" as const,
+};
+
+const eyeButton = {
+  position: "absolute" as const,
+  right: "15px",
+  top: "50%",
+  transform: "translateY(-50%)",
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  color: "#6b7280",
+  fontSize: "18px",
 };
 
 const button = {
@@ -362,7 +381,6 @@ const button = {
   color: "#ffffff",
   fontSize: "17px",
   fontWeight: "800",
-  cursor: "pointer",
   boxShadow:
     "0 12px 30px rgba(124,58,237,0.35)",
 };

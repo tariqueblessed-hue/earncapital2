@@ -1,36 +1,35 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { EarnCapitalPopupProvider } from "@/components/notifications/EarnCapitalPopup";
 
 export const metadata: Metadata = {
-  title: "EarnCapital",
-  description: "Earn Daily Through AI Tasks",
-  verification: {
-    google: "nfbVkQ4qsIA6j-aea-lbTRd4miV-Sc8VIp5a0QWebww",
-  },
+title: {
+default: "EarnCapital",
+template: "%s | EarnCapital",
+},
+description:
+"EarnCapital — complete tasks, earn rewards, build your balance and grow with referrals.",
+keywords: [
+"EarnCapital",
+"earn money online",
+"online tasks",
+"rewards",
+"referrals",
+],
 };
 
 export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable}`}
-    >
-      <body>{children}</body>
-    </html>
-  );
+children,
+}: Readonly<{
+children: React.ReactNode;
+}>) {
+return (
+<html lang="en">
+<body>
+<EarnCapitalPopupProvider>
+{children}
+</EarnCapitalPopupProvider>
+</body>
+</html>
+);
 }
