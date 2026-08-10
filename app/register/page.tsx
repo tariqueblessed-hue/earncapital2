@@ -26,21 +26,28 @@ export default function RegisterPage() {
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  /* =========================
+     READ REFERRAL LINK
+  ========================= */
+
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(
+      window.location.search
+    );
+
     const ref = params.get("ref");
 
     if (ref) {
-      setReferralCode(ref);
+      setReferralCode(ref.trim());
     }
   }, []);
 
+  /* =========================
+     REGISTER
+  ========================= */
+
   const register = async () => {
     if (loading) return;
-
-    /* =========================
-       BASIC VALIDATION
-    ========================= */
 
     if (
       !fullName.trim() ||
@@ -88,16 +95,67 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const cleanEmail = email.trim().toLowerCase();
-      const cleanFullName = fullName.trim();
-      const cleanUsername = username.trim();
-      const cleanPhone = phone.trim();
-      const cleanReferral = referralCode.trim();
+      const cleanEmail =
+        email.trim().toLowerCase();
 
-      console.log("Starting registration...");
+      const cleanFullName =
+        fullName.trim();
+
+      const cleanUsername =
+        username.trim();
+
+      const cleanPhone =
+        phone.trim();
+
+      const cleanReferral =
+        referralCode.trim();
 
       /* =========================
-         CREATE SUPABASE ACCOUNT
+         CHECK REFERRAL CODE
+      ========================= */
+
+      let validReferral: string | null = null;
+
+      if (cleanReferral) {
+        const { data: referrer, error: refError } =
+          await supabase
+            .from("users")
+            .select("username")
+            .eq("username", cleanReferral)
+            .maybeSingle();
+
+        if (refError) {
+          console.error(
+            "Referral lookup error:",
+            refError
+          );
+
+          showPopup(
+            "error",
+            "Referral Error",
+            "We couldn't verify the referral code. Please try again."
+          );
+
+          setLoading(false);
+          return;
+        }
+
+        if (!referrer) {
+          showPopup(
+            "warning",
+            "Invalid Referral",
+            "That referral code does not belong to an existing EarnCapital user."
+          );
+
+          setLoading(false);
+          return;
+        }
+
+        validReferral = referrer.username;
+      }
+
+      /* =========================
+         CREATE AUTH ACCOUNT
       ========================= */
 
       const { data, error } =
@@ -110,19 +168,14 @@ export default function RegisterPage() {
               username: cleanUsername,
               phone: cleanPhone,
 
-              // User's own referral code
-              referral_code: cleanUsername,
+              referral_code:
+                cleanUsername,
 
-              // Person who referred this user
               referred_by:
-                cleanReferral || null,
+                validReferral,
             },
           },
         });
-
-      /* =========================
-         SUPABASE ERROR
-      ========================= */
 
       if (error) {
         console.error(
@@ -134,23 +187,14 @@ export default function RegisterPage() {
           "error",
           "Registration failed ❌",
           error.message ||
-            "We couldn't create your account. Please try again."
+            "We couldn't create your account."
         );
 
         setLoading(false);
         return;
       }
 
-      /* =========================
-         NO USER RETURNED
-      ========================= */
-
-      if (!data || !data.user) {
-        console.error(
-          "Registration returned no user:",
-          data
-        );
-
+      if (!data?.user) {
         showPopup(
           "error",
           "Registration failed ❌",
@@ -161,13 +205,8 @@ export default function RegisterPage() {
         return;
       }
 
-      console.log(
-        "Registration successful:",
-        data.user.id
-      );
-
       /* =========================
-         SAVE CURRENT USER
+         SAVE LOCAL SESSION INFO
       ========================= */
 
       localStorage.setItem(
@@ -186,14 +225,39 @@ export default function RegisterPage() {
       );
 
       /* =========================
+         UPDATE USERS TABLE
+         
+         This is the important part
+         for REAL referral tracking.
+      ========================= */
+
+      const { error: profileError } =
+        await supabase
+          .from("users")
+          .update({
+            username: cleanUsername,
+            email: cleanEmail,
+            full_name: cleanFullName,
+            phone: cleanPhone,
+            referral_code: cleanUsername,
+            referred_by: validReferral,
+          })
+          .eq("email", cleanEmail);
+
+      if (profileError) {
+        console.error(
+          "PROFILE UPDATE ERROR:",
+          profileError
+        );
+
+        /*
+         * We don't stop registration here because
+         * the Auth account was already created.
+         */
+      }
+
+      /* =========================
          SUCCESS
-         
-         IMPORTANT:
-         We DO NOT sign the user out.
-         
-         Email confirmation is OFF,
-         so Supabase has already created
-         an active session.
       ========================= */
 
       showPopup(
@@ -203,34 +267,22 @@ export default function RegisterPage() {
         "Continue"
       );
 
-      /* =========================
-         GO TO DASHBOARD
-      ========================= */
-
       setTimeout(() => {
         router.push("/dashboard");
       }, 1500);
 
     } catch (error) {
       console.error(
-        "REGISTRATION CATCH ERROR:",
+        "REGISTRATION ERROR:",
         error
       );
-
-      let errorMessage =
-        "We couldn't complete your registration. Please try again.";
-
-      if (
-        error instanceof Error &&
-        error.message
-      ) {
-        errorMessage = error.message;
-      }
 
       showPopup(
         "error",
         "Something went wrong ❌",
-        errorMessage
+        error instanceof Error
+          ? error.message
+          : "We couldn't complete your registration."
       );
 
       setLoading(false);
@@ -253,15 +305,14 @@ export default function RegisterPage() {
         style={{
           width: "100%",
           maxWidth: "520px",
-          background: "rgba(255,255,255,0.96)",
+          background:
+            "rgba(255,255,255,0.96)",
           borderRadius: "28px",
           padding: "35px",
           boxShadow:
             "0 25px 60px rgba(0,0,0,.35)",
         }}
       >
-        {/* HEADER */}
-
         <div
           style={{
             textAlign: "center",
@@ -289,8 +340,6 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {/* FULL NAME */}
-
         <input
           placeholder="Full Name"
           value={fullName}
@@ -300,8 +349,6 @@ export default function RegisterPage() {
           style={input}
         />
 
-        {/* USERNAME */}
-
         <input
           placeholder="Username"
           value={username}
@@ -310,8 +357,6 @@ export default function RegisterPage() {
           }
           style={input}
         />
-
-        {/* EMAIL */}
 
         <input
           type="email"
@@ -323,8 +368,6 @@ export default function RegisterPage() {
           style={input}
         />
 
-        {/* PHONE */}
-
         <input
           type="tel"
           placeholder="Phone Number"
@@ -334,8 +377,6 @@ export default function RegisterPage() {
           }
           style={input}
         />
-
-        {/* PASSWORD */}
 
         <div
           style={{
@@ -356,7 +397,7 @@ export default function RegisterPage() {
             }
             style={{
               ...input,
-              marginBottom: "0",
+              marginBottom: 0,
               paddingRight: "50px",
             }}
           />
@@ -375,8 +416,6 @@ export default function RegisterPage() {
             )}
           </button>
         </div>
-
-        {/* CONFIRM PASSWORD */}
 
         <div
           style={{
@@ -397,7 +436,7 @@ export default function RegisterPage() {
             }
             style={{
               ...input,
-              marginBottom: "0",
+              marginBottom: 0,
               paddingRight: "50px",
             }}
           />
@@ -419,8 +458,6 @@ export default function RegisterPage() {
           </button>
         </div>
 
-        {/* REFERRAL CODE */}
-
         <input
           placeholder="Referral Code (Optional)"
           value={referralCode}
@@ -429,8 +466,6 @@ export default function RegisterPage() {
           }
           style={input}
         />
-
-        {/* TERMS */}
 
         <label
           style={{
@@ -453,8 +488,6 @@ export default function RegisterPage() {
           I agree to Terms & Conditions
         </label>
 
-        {/* REGISTER BUTTON */}
-
         <button
           type="button"
           onClick={register}
@@ -471,8 +504,6 @@ export default function RegisterPage() {
             ? "Creating Account..."
             : "Create Account"}
         </button>
-
-        {/* LOGIN */}
 
         <p
           style={{
@@ -498,10 +529,6 @@ export default function RegisterPage() {
   );
 }
 
-/* =========================
-   INPUT STYLE
-========================= */
-
 const input = {
   width: "100%",
   padding: "16px",
@@ -515,10 +542,6 @@ const input = {
   boxSizing: "border-box" as const,
 };
 
-/* =========================
-   EYE BUTTON
-========================= */
-
 const eyeButton = {
   position: "absolute" as const,
   right: "15px",
@@ -530,10 +553,6 @@ const eyeButton = {
   color: "#6b7280",
   fontSize: "18px",
 };
-
-/* =========================
-   REGISTER BUTTON
-========================= */
 
 const button = {
   width: "100%",
