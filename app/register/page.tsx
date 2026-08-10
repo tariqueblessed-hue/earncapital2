@@ -36,6 +36,12 @@ export default function RegisterPage() {
   }, []);
 
   const register = async () => {
+    if (loading) return;
+
+    /* =========================
+       BASIC VALIDATION
+    ========================= */
+
     if (
       !fullName.trim() ||
       !username.trim() ||
@@ -82,59 +88,149 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password,
-        options: {
-          data: {
-            full_name: fullName.trim(),
-            username: username.trim(),
-            phone: phone.trim(),
-            referral_code: username.trim(),
-            referred_by: referralCode.trim() || null,
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanFullName = fullName.trim();
+      const cleanUsername = username.trim();
+      const cleanPhone = phone.trim();
+      const cleanReferral = referralCode.trim();
+
+      console.log("Starting registration...");
+
+      /* =========================
+         CREATE SUPABASE ACCOUNT
+      ========================= */
+
+      const { data, error } =
+        await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: {
+            data: {
+              full_name: cleanFullName,
+              username: cleanUsername,
+              phone: cleanPhone,
+
+              // User's own referral code
+              referral_code: cleanUsername,
+
+              // Person who referred this user
+              referred_by:
+                cleanReferral || null,
+            },
           },
-        },
-      });
+        });
+
+      /* =========================
+         SUPABASE ERROR
+      ========================= */
 
       if (error) {
+        console.error(
+          "SUPABASE REGISTRATION ERROR:",
+          error
+        );
+
         showPopup(
           "error",
-          "Registration failed",
-          error.message
+          "Registration failed ❌",
+          error.message ||
+            "We couldn't create your account. Please try again."
         );
+
         setLoading(false);
         return;
       }
 
-      if (!data.user) {
+      /* =========================
+         NO USER RETURNED
+      ========================= */
+
+      if (!data || !data.user) {
+        console.error(
+          "Registration returned no user:",
+          data
+        );
+
         showPopup(
           "error",
-          "Registration failed",
+          "Registration failed ❌",
           "We couldn't create your account. Please try again."
         );
+
         setLoading(false);
         return;
       }
 
-      await supabase.auth.signOut();
+      console.log(
+        "Registration successful:",
+        data.user.id
+      );
+
+      /* =========================
+         SAVE CURRENT USER
+      ========================= */
+
+      localStorage.setItem(
+        "currentUserId",
+        data.user.id
+      );
+
+      localStorage.setItem(
+        "currentUser",
+        cleanUsername
+      );
+
+      localStorage.setItem(
+        "currentUserEmail",
+        cleanEmail
+      );
+
+      /* =========================
+         SUCCESS
+         
+         IMPORTANT:
+         We DO NOT sign the user out.
+         
+         Email confirmation is OFF,
+         so Supabase has already created
+         an active session.
+      ========================= */
 
       showPopup(
         "celebration",
         "Congratulations! 🎉",
-        "Your EarnCapital account has been created successfully! We've sent a verification email to your inbox. Verify your email before logging in.",
-        "Go to Login"
+        `Your EarnCapital account has been created successfully! Welcome, ${cleanUsername}!`,
+        "Continue"
       );
 
+      /* =========================
+         GO TO DASHBOARD
+      ========================= */
+
       setTimeout(() => {
-        router.push("/login");
-      }, 2500);
+        router.push("/dashboard");
+      }, 1500);
+
     } catch (error) {
-      console.error("Registration error:", error);
+      console.error(
+        "REGISTRATION CATCH ERROR:",
+        error
+      );
+
+      let errorMessage =
+        "We couldn't complete your registration. Please try again.";
+
+      if (
+        error instanceof Error &&
+        error.message
+      ) {
+        errorMessage = error.message;
+      }
 
       showPopup(
         "error",
-        "Something went wrong",
-        "We couldn't complete your registration. Please try again."
+        "Something went wrong ❌",
+        errorMessage
       );
 
       setLoading(false);
@@ -160,9 +256,12 @@ export default function RegisterPage() {
           background: "rgba(255,255,255,0.96)",
           borderRadius: "28px",
           padding: "35px",
-          boxShadow: "0 25px 60px rgba(0,0,0,.35)",
+          boxShadow:
+            "0 25px 60px rgba(0,0,0,.35)",
         }}
       >
+        {/* HEADER */}
+
         <div
           style={{
             textAlign: "center",
@@ -190,36 +289,54 @@ export default function RegisterPage() {
           </p>
         </div>
 
+        {/* FULL NAME */}
+
         <input
           placeholder="Full Name"
           value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
+          onChange={(e) =>
+            setFullName(e.target.value)
+          }
           style={input}
         />
+
+        {/* USERNAME */}
 
         <input
           placeholder="Username"
           value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          onChange={(e) =>
+            setUsername(e.target.value)
+          }
           style={input}
         />
+
+        {/* EMAIL */}
 
         <input
           type="email"
           placeholder="Email Address"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) =>
+            setEmail(e.target.value)
+          }
           style={input}
         />
+
+        {/* PHONE */}
 
         <input
+          type="tel"
           placeholder="Phone Number"
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          onChange={(e) =>
+            setPhone(e.target.value)
+          }
           style={input}
         />
 
-        {/* Password */}
+        {/* PASSWORD */}
+
         <div
           style={{
             position: "relative",
@@ -227,10 +344,16 @@ export default function RegisterPage() {
           }}
         >
           <input
-            type={showPassword ? "text" : "password"}
+            type={
+              showPassword
+                ? "text"
+                : "password"
+            }
             placeholder="Password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
             style={{
               ...input,
               marginBottom: "0",
@@ -240,14 +363,21 @@ export default function RegisterPage() {
 
           <button
             type="button"
-            onClick={() => setShowPassword(!showPassword)}
+            onClick={() =>
+              setShowPassword(!showPassword)
+            }
             style={eyeButton}
           >
-            {showPassword ? <FaEyeSlash /> : <FaEye />}
+            {showPassword ? (
+              <FaEyeSlash />
+            ) : (
+              <FaEye />
+            )}
           </button>
         </div>
 
-        {/* Confirm Password */}
+        {/* CONFIRM PASSWORD */}
+
         <div
           style={{
             position: "relative",
@@ -255,7 +385,11 @@ export default function RegisterPage() {
           }}
         >
           <input
-            type={showConfirmPassword ? "text" : "password"}
+            type={
+              showConfirmPassword
+                ? "text"
+                : "password"
+            }
             placeholder="Confirm Password"
             value={confirmPassword}
             onChange={(e) =>
@@ -271,7 +405,9 @@ export default function RegisterPage() {
           <button
             type="button"
             onClick={() =>
-              setShowConfirmPassword(!showConfirmPassword)
+              setShowConfirmPassword(
+                !showConfirmPassword
+              )
             }
             style={eyeButton}
           >
@@ -283,12 +419,18 @@ export default function RegisterPage() {
           </button>
         </div>
 
+        {/* REFERRAL CODE */}
+
         <input
           placeholder="Referral Code (Optional)"
           value={referralCode}
-          onChange={(e) => setReferralCode(e.target.value)}
+          onChange={(e) =>
+            setReferralCode(e.target.value)
+          }
           style={input}
         />
+
+        {/* TERMS */}
 
         <label
           style={{
@@ -303,23 +445,34 @@ export default function RegisterPage() {
           <input
             type="checkbox"
             checked={agree}
-            onChange={() => setAgree(!agree)}
+            onChange={() =>
+              setAgree(!agree)
+            }
           />
 
           I agree to Terms & Conditions
         </label>
 
+        {/* REGISTER BUTTON */}
+
         <button
+          type="button"
           onClick={register}
           disabled={loading}
           style={{
             ...button,
             opacity: loading ? 0.7 : 1,
-            cursor: loading ? "not-allowed" : "pointer",
+            cursor: loading
+              ? "not-allowed"
+              : "pointer",
           }}
         >
-          {loading ? "Creating Account..." : "Create Account"}
+          {loading
+            ? "Creating Account..."
+            : "Create Account"}
         </button>
+
+        {/* LOGIN */}
 
         <p
           style={{
@@ -345,6 +498,10 @@ export default function RegisterPage() {
   );
 }
 
+/* =========================
+   INPUT STYLE
+========================= */
+
 const input = {
   width: "100%",
   padding: "16px",
@@ -358,6 +515,10 @@ const input = {
   boxSizing: "border-box" as const,
 };
 
+/* =========================
+   EYE BUTTON
+========================= */
+
 const eyeButton = {
   position: "absolute" as const,
   right: "15px",
@@ -369,6 +530,10 @@ const eyeButton = {
   color: "#6b7280",
   fontSize: "18px",
 };
+
+/* =========================
+   REGISTER BUTTON
+========================= */
 
 const button = {
   width: "100%",

@@ -17,7 +17,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   async function login() {
-    if (!email.trim() || !password) {
+    if (loading) return;
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanEmail || !password) {
       showPopup(
         "warning",
         "Almost there 👀",
@@ -29,59 +33,67 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      console.log("Starting login...");
+
       const { data, error } =
         await supabase.auth.signInWithPassword({
-          email: email.trim().toLowerCase(),
-          password,
+          email: cleanEmail,
+          password: password,
         });
 
+      /* =========================
+         LOGIN ERROR
+      ========================= */
+
       if (error) {
+        console.error(
+          "SUPABASE LOGIN ERROR:",
+          error
+        );
+
         showPopup(
           "error",
-          "Login unsuccessful",
-          error.message
+          "Login unsuccessful ❌",
+          error.message ||
+            "Invalid email or password. Please check your details and try again."
         );
 
         setLoading(false);
         return;
       }
 
-      if (!data.user) {
+      /* =========================
+         NO USER
+      ========================= */
+
+      if (!data || !data.user) {
         showPopup(
           "error",
-          "Login unsuccessful",
-          "We couldn't find your account. Please try again."
+          "Login unsuccessful ❌",
+          "We couldn't find your account. Please check your email and password."
         );
 
         setLoading(false);
         return;
       }
 
-      /*
-       * Email verification check
-       */
-      if (!data.user.email_confirmed_at) {
-        await supabase.auth.signOut();
+      console.log(
+        "Login successful:",
+        data.user.id
+      );
 
-        showPopup(
-          "warning",
-          "Verify your email first 📩",
-          "Your account exists, but your email hasn't been verified yet. Please check your inbox and click the verification link."
-        );
+      /* =========================
+         LOAD USER PROFILE
+      ========================= */
 
-        setLoading(false);
-        return;
-      }
-
-      /*
-       * Load user profile
-       */
-      const { data: profile, error: profileError } =
-        await supabase
-          .from("users")
-          .select("username")
-          .eq("id", data.user.id)
-          .single();
+      const {
+        data: profile,
+        error: profileError,
+      } = await supabase
+        .from("users")
+        .select("username, full_name, email, phone")
+        .eq("id", data.user.id)
+        .maybeSingle();
 
       if (profileError) {
         console.error(
@@ -90,9 +102,10 @@ export default function LoginPage() {
         );
       }
 
-      /*
-       * Save current user information
-       */
+      /* =========================
+         SAVE CURRENT USER
+      ========================= */
+
       localStorage.setItem(
         "currentUserId",
         data.user.id
@@ -100,12 +113,20 @@ export default function LoginPage() {
 
       localStorage.setItem(
         "currentUser",
-        profile?.username || ""
+        profile?.username ||
+          data.user.user_metadata?.username ||
+          ""
       );
 
-      /*
-       * Beautiful login message
-       */
+      localStorage.setItem(
+        "currentUserEmail",
+        data.user.email || cleanEmail
+      );
+
+      /* =========================
+         SUCCESS
+      ========================= */
+
       showPopup(
         "success",
         "Welcome back! 👋",
@@ -113,24 +134,33 @@ export default function LoginPage() {
           profile?.username
             ? `, ${profile.username}`
             : ""
-        }! Your EarnCapital account is ready.`,
+       }! Your EarnCapital account is ready.`,
         "Continue"
       );
 
-      /*
-       * Give the popup time to appear
-       * before moving to dashboard.
-       */
       setTimeout(() => {
         router.push("/dashboard");
-      }, 1800);
+      }, 1500);
     } catch (error) {
-      console.error("Login error:", error);
+      console.error(
+        "LOGIN CATCH ERROR:",
+        error
+      );
+
+      let message =
+        "We couldn't complete your login. Please try again.";
+
+      if (
+        error instanceof Error &&
+        error.message
+      ) {
+        message = error.message;
+      }
 
       showPopup(
         "error",
-        "Something went wrong",
-        "We couldn't complete your login. Please try again."
+        "Something went wrong ❌",
+        message
       );
 
       setLoading(false);
@@ -160,6 +190,8 @@ export default function LoginPage() {
             "0 25px 60px rgba(0,0,0,.25)",
         }}
       >
+        {/* HEADER */}
+
         <div
           style={{
             textAlign: "center",
@@ -187,6 +219,8 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {/* EMAIL */}
+
         <input
           type="email"
           placeholder="Email Address"
@@ -196,6 +230,8 @@ export default function LoginPage() {
           }
           style={input}
         />
+
+        {/* PASSWORD */}
 
         <div
           style={{
@@ -236,6 +272,8 @@ export default function LoginPage() {
           </button>
         </div>
 
+        {/* FORGOT PASSWORD */}
+
         <p
           style={{
             textAlign: "right",
@@ -255,7 +293,10 @@ export default function LoginPage() {
           </a>
         </p>
 
+        {/* LOGIN BUTTON */}
+
         <button
+          type="button"
           onClick={login}
           disabled={loading}
           style={{
@@ -270,6 +311,8 @@ export default function LoginPage() {
             ? "Logging in..."
             : "Login"}
         </button>
+
+        {/* REGISTER */}
 
         <p
           style={{
@@ -295,6 +338,10 @@ export default function LoginPage() {
   );
 }
 
+/* =========================
+   INPUT
+========================= */
+
 const input = {
   width: "100%",
   padding: "16px",
@@ -308,6 +355,10 @@ const input = {
   boxSizing: "border-box" as const,
 };
 
+/* =========================
+   EYE BUTTON
+========================= */
+
 const eyeButton = {
   position: "absolute" as const,
   right: "15px",
@@ -319,6 +370,10 @@ const eyeButton = {
   color: "#6b7280",
   fontSize: "18px",
 };
+
+/* =========================
+   LOGIN BUTTON
+========================= */
 
 const button = {
   width: "100%",
